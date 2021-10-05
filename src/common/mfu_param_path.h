@@ -21,6 +21,11 @@ extern "C" {
 #include <sys/stat.h>
 #include <unistd.h>
 
+/* For use with copy_opts->copy_xattrs */
+#define XATTR_SKIP_ALL    0
+#define XATTR_SKIP_LUSTRE 1
+#define XATTR_COPY_ALL    2
+
 /* Collective routine called "mfu_param_path_set" to process input
  * paths specified by the user.  This routine takes a path as a string,
  * processes it in different ways, and fills in a data structure.
@@ -122,6 +127,8 @@ typedef struct {
     char*  dest_path;      /* prefex of destination directory */
     char*  input_file;     /* file name of input list */
     bool   preserve;       /* whether to preserve timestamps, ownership, permissions, etc. */
+    int    copy_xattrs;    /* copy xattrs; for Lustre this preserves striping.
+                              An int to allow varitions like copy "none", "non-lustre", all. */
     int    dereference;    /* if true, dereference symbolic links in the source.
                             * this is not a perfect opposite of no_dereference */
     int    no_dereference; /* if true, don't dereference source symbolic links */

@@ -74,11 +74,16 @@ static void print_usage(void)
     printf("  -s, --direct            - open files with O_DIRECT\n");
     printf("      --link-dest <DIR>   - hardlink to files in DIR when unchanged\n");
     printf("  -S, --sparse            - create sparse files when possible\n");
+    printf("  -x, --copy-xattrs <N>   - copy xattrs (default 1)\n");
     printf("      --progress <N>      - print progress every N seconds\n");
     printf("  -v, --verbose           - verbose output\n");
     printf("  -q, --quiet             - quiet output\n");
     printf("  -h, --help              - print usage\n");
     printf("\n");
+    printf("  copy-xattrs <N>:\n");
+    printf("               0 copy no xattrs; striping not copied for Lustre\n");
+    printf("               1 copy non-Lustre xattrs; striping not copied for Lustre\n");
+    printf("               2 copy all xattrs; striping is copied for Lustre\n");
     printf("For more information see https://mpifileutils.readthedocs.io.\n");
     fflush(stdout);
 }
@@ -3028,6 +3033,7 @@ int main(int argc, char **argv)
         {"debug",          0, 0, 'd'}, // undocumented
         {"link-dest",      1, 0, 'l'},
         {"sparse",         0, 0, 'S'},
+        {"copy-xattrs",    1, 0, 'x'},
         {"progress",       1, 0, 'R'},
         {"verbose",        0, 0, 'v'},
         {"quiet",          0, 0, 'q'},
@@ -3135,6 +3141,9 @@ int main(int argc, char **argv)
         case 'S':
             copy_opts->sparse = 1;
             break;
+        case 'x':
+            copy_opts->copy_xattrs = atoi(optarg);
+            break;
         case 'R':
             mfu_progress_timeout = atoi(optarg);
             break;
@@ -3158,6 +3167,14 @@ int main(int argc, char **argv)
             usage = 1;
             break;
         }
+    }
+
+    /* check that we got a valid copy_xattrs value */
+    if (copy_opts->copy_xattrs < 0 || copy_opts->copy_xattrs > 2) {
+        if (rank == 0) {
+            MFU_LOG(MFU_LOG_ERR, "Code for --copy-xattrs must be between 0 and 2: %d invalid", copy_opts->copy_xattrs);
+        }
+        usage = 1;
     }
 
     /* check that we got a valid progress value */

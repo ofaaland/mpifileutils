@@ -336,12 +336,34 @@ static int mfu_copy_xattrs(
              * allocate something bigger as needed */
             size_t val_bufsize = 1024;
             void* val = (void*) MFU_MALLOC(val_bufsize);
+            int skip_xattr = 0;
 
             /* lookup value for name */
             ssize_t val_size;
             int got_val = 0;
 
-            while(! got_val) {
+            if (copy_opts->copy_xattrs == XATTR_COPY_ALL) {
+                skip_xattr = 0;
+            } else if (copy_opts->copy_xattrs == XATTR_SKIP_ALL) {
+                skip_xattr = 1;
+            } else if (copy_opts->copy_xattrs == XATTR_SKIP_LUSTRE) {
+                /* ignore xattrs lustre treats specially */
+                /* list from lustre source file lustre_idl.h */
+                if (    strncmp(name,"lustre.",strlen("lustre.")) == 0 ||
+                        strcmp(name,"trusted.som") == 0 || strcmp(name,"trusted.lov") == 0 ||
+                        strcmp(name,"trusted.lma") == 0 || strcmp(name,"trusted.lmv") == 0 ||
+                        strcmp(name,"trusted.dmv") == 0 || strcmp(name,"trusted.link") == 0 ||
+                        strcmp(name,"trusted.fid") == 0 || strcmp(name,"trusted.version") == 0 ||
+                        strcmp(name,"trusted.hsm") == 0 || strcmp(name,"trusted.lfsck_bitmap") == 0 ||
+                        strcmp(name,"trusted.dummy") == 0)
+                {
+                    skip_xattr = 1;
+                } else {
+                    skip_xattr = 0;
+                }
+            }
+
+            while(! got_val && ! skip_xattr) {
                 errno = 0;
                 if (copy_opts->dereference) {
                     /* getxattr of dereferenced symbolic links */
@@ -390,7 +412,7 @@ static int mfu_copy_xattrs(
             }
 
             /* set attribute on destination object */
-            if(got_val) {
+            if(got_val && ! skip_xattr) {
                 errno = 0;
                 /* lsetxattr of symbolic link itself. No need to dereference here */
                 int setrc = mfu_file_lsetxattr(dest_path, name, val, (size_t) val_size, 0, mfu_dst_file);
@@ -3253,6 +3275,9 @@ mfu_copy_opts_t* mfu_copy_opts_new(void)
 
     /* By default, don't bother to preserve all attributes. */
     opts->preserve = false;
+
+    /* By default, do not copy special to Lustre (which set striping) */
+    opts->copy_xattrs = XATTR_SKIP_LUSTRE;
 
     /* By default, don't dereference source symbolic links. 
      * This is not a perfect opposite of no_dereference */
