@@ -74,6 +74,7 @@ static void print_usage(void)
     printf("  -s, --direct            - open files with O_DIRECT\n");
     printf("      --link-dest <DIR>   - hardlink to files in DIR when unchanged\n");
     printf("  -S, --sparse            - create sparse files when possible\n");
+    printf("  -x, --copy-xattrs <OPT> - copy xattrs ('none', 'all', 'non-lustre')\n");
     printf("      --progress <N>      - print progress every N seconds\n");
     printf("  -v, --verbose           - verbose output\n");
     printf("  -q, --quiet             - quiet output\n");
@@ -3028,6 +3029,7 @@ int main(int argc, char **argv)
         {"debug",          0, 0, 'd'}, // undocumented
         {"link-dest",      1, 0, 'l'},
         {"sparse",         0, 0, 'S'},
+        {"copy-xattrs",    1, 0, 'x'},
         {"progress",       1, 0, 'R'},
         {"verbose",        0, 0, 'v'},
         {"quiet",          0, 0, 'q'},
@@ -3135,6 +3137,16 @@ int main(int argc, char **argv)
         case 'S':
             copy_opts->sparse = 1;
             break;
+        case 'x':
+            if (!strcmp(optarg,"none"))
+                copy_opts->copy_xattrs = XATTR_SKIP_ALL;
+            else if (!strcmp(optarg,"non-lustre"))
+                copy_opts->copy_xattrs = XATTR_SKIP_LUSTRE;
+            else if (!strcmp(optarg,"all"))
+                copy_opts->copy_xattrs = XATTR_COPY_ALL;
+            else
+                copy_opts->copy_xattrs = XATTR_COPY_INVALID;
+            break;
         case 'R':
             mfu_progress_timeout = atoi(optarg);
             break;
@@ -3158,6 +3170,14 @@ int main(int argc, char **argv)
             usage = 1;
             break;
         }
+    }
+
+    /* check that we got a valid copy_xattrs value */
+    if (copy_opts->copy_xattrs == XATTR_COPY_INVALID) {
+        if (rank == 0) {
+            MFU_LOG(MFU_LOG_ERR, "Unrecognized option for --copy-xattrs");
+        }
+        usage = 1;
     }
 
     /* check that we got a valid progress value */
