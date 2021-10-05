@@ -358,8 +358,12 @@ static int mfu_copy_xattrs(
                         strcmp(name,"dummy") == 0)
                 {
                     skip_xattr = 1;
+                    MFU_LOG(MFU_LOG_WARN, "Skipping aribute name=%s on `%s'",
+                            name, src_path);
                 } else {
                     skip_xattr = 0;
+                    MFU_LOG(MFU_LOG_WARN, "Attempting to copy aribute name=%s on `%s'",
+                            name, src_path);
                 }
             }
 
