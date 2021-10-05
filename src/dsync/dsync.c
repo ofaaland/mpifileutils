@@ -63,6 +63,7 @@ static void print_usage(void)
     printf("  -b  --batch-files <N>   - batch files into groups of N during copy\n");
     printf("      --bufsize <SIZE>    - IO buffer size in bytes (default " MFU_BUFFER_SIZE_STR ")\n");
     printf("      --chunksize <SIZE>  - minimum work size per task in bytes (default " MFU_CHUNK_SIZE_STR ")\n");
+    printf("  -e, --copy-xattrs <OPT> - copy xattrs (none, all, non-lustre, libattr)\n");
 #ifdef DAOS_SUPPORT
     printf("      --daos-prefix       - DAOS prefix for unified namespace path \n");
     printf("      --daos-api          - DAOS API in {DFS, DAOS} (default uses DFS for POSIX containers)\n");
@@ -3017,6 +3018,7 @@ int main(int argc, char **argv)
         {"batch-files",    1, 0, 'b'},
         {"bufsize",        1, 0, 'B'},
         {"chunksize",      1, 0, 'k'},
+        {"copy-xattrs",    1, 0, 'e'},
         {"daos-prefix",    1, 0, 'X'},
         {"daos-api",       1, 0, 'x'},
         {"contents",       0, 0, 'c'},
@@ -3047,7 +3049,7 @@ int main(int argc, char **argv)
 
     while (1) {
         int c = getopt_long(
-            argc, argv, "b:cDso:LPSvqh",
+            argc, argv, "b:cDe:so:LPSvqh",
             long_options, &option_index
         );
 
@@ -3079,6 +3081,22 @@ int main(int argc, char **argv)
                 usage = 1;
             } else {
                 copy_opts->chunk_size = bytes;
+            }
+            break;
+        case 'e':
+            if (!strcmp(optarg,"none")) {
+                copy_opts->copy_xattrs = XATTR_COPY_NONE;
+            } else if (!strcmp(optarg,"non-lustre")) {
+                copy_opts->copy_xattrs = XATTR_SKIP_LUSTRE;
+            } else if (!strcmp(optarg,"libattr")) {
+                copy_opts->copy_xattrs = XATTR_USE_LIBATTR;
+            } else if (!strcmp(optarg,"all")) {
+                copy_opts->copy_xattrs = XATTR_COPY_ALL;
+            } else {
+                if (rank == 0) {
+                    MFU_LOG(MFU_LOG_ERR, "Unrecognized option for --copy-xattrs");
+                }
+                usage = 1;
             }
             break;
 #ifdef DAOS_SUPPORT

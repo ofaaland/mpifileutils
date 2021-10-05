@@ -17,6 +17,8 @@
 #include <getopt.h>
 #include <time.h> /* asctime / localtime */
 #include <regex.h>
+#include <attr/libattr.h>
+#include <attr/error_context.h>
 
 /* These headers are needed to query the Lustre MDS for stat
  * information.  This information may be incomplete, but it
@@ -330,18 +332,44 @@ static int mfu_copy_xattrs(
     /* iterate over list and copy values to new object lgetxattr/lsetxattr */
     if(got_list) {
         char* name = list;
+        struct error_context ctx;
 
         while(name < list + list_size) {
             /* start with a reasonable buffer,
              * allocate something bigger as needed */
             size_t val_bufsize = 1024;
             void* val = (void*) MFU_MALLOC(val_bufsize);
+            int copy_xattr = 1;
 
             /* lookup value for name */
             ssize_t val_size;
             int got_val = 0;
 
-            while(! got_val) {
+            if (copy_opts->copy_xattrs == XATTR_COPY_ALL) {
+                copy_xattr = 1;
+            } else if (copy_opts->copy_xattrs == XATTR_COPY_NONE) {
+                copy_xattr = 0;
+            } else if (copy_opts->copy_xattrs == XATTR_USE_LIBATTR) {
+                if (attr_copy_action(name, &ctx) == ATTR_ACTION_SKIP)
+                    copy_xattr = 0;
+            } else if (copy_opts->copy_xattrs == XATTR_SKIP_LUSTRE) {
+                /* ignore xattrs lustre treats specially */
+                /* list from lustre source file lustre_idl.h */
+                if (    strncmp(name,"lustre.",strlen("lustre.")) == 0 ||
+                        strcmp(name,"trusted.som") == 0 || strcmp(name,"trusted.lov") == 0 ||
+                        strcmp(name,"trusted.lma") == 0 || strcmp(name,"trusted.lmv") == 0 ||
+                        strcmp(name,"trusted.dmv") == 0 || strcmp(name,"trusted.link") == 0 ||
+                        strcmp(name,"trusted.fid") == 0 || strcmp(name,"trusted.version") == 0 ||
+                        strcmp(name,"trusted.hsm") == 0 || strcmp(name,"trusted.lfsck_bitmap") == 0 ||
+                        strcmp(name,"trusted.dummy") == 0)
+                {
+                    copy_xattr = 0;
+                } else {
+                    copy_xattr = 1;
+                }
+            }
+
+            while(! got_val && copy_xattr) {
                 errno = 0;
                 if (copy_opts->dereference) {
                     /* getxattr of dereferenced symbolic links */
@@ -390,7 +418,7 @@ static int mfu_copy_xattrs(
             }
 
             /* set attribute on destination object */
-            if(got_val) {
+            if(got_val && copy_xattr) {
                 errno = 0;
                 /* lsetxattr of symbolic link itself. No need to dereference here */
                 int setrc = mfu_file_lsetxattr(dest_path, name, val, (size_t) val_size, 0, mfu_dst_file);
@@ -3253,6 +3281,9 @@ mfu_copy_opts_t* mfu_copy_opts_new(void)
 
     /* By default, don't bother to preserve all attributes. */
     opts->preserve = false;
+
+    /* By default, do not copy special to Lustre (which set striping) */
+    opts->copy_xattrs = XATTR_SKIP_LUSTRE;
 
     /* By default, don't dereference source symbolic links. 
      * This is not a perfect opposite of no_dereference */
