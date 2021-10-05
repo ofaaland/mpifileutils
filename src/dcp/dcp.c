@@ -79,6 +79,7 @@ void print_usage(void)
 #endif
     printf("  -b, --bufsize <SIZE>     - IO buffer size in bytes (default " MFU_BUFFER_SIZE_STR ")\n");
     printf("  -k, --chunksize <SIZE>   - work size per task in bytes (default " MFU_CHUNK_SIZE_STR ")\n");
+    printf("  -e, --xattrs <OPT>       - copy xattrs (none, all, non-lustre, libattr)\n");
 #ifdef DAOS_SUPPORT
     printf("      --daos-prefix        - DAOS prefix for unified namespace path\n");
     printf("      --daos-api           - DAOS API in {DFS, DAOS} (default uses DFS for POSIX containers)\n");
@@ -90,7 +91,7 @@ void print_usage(void)
     printf("  -i, --input <file>       - read source list from file\n");
     printf("  -L, --dereference        - copy original files instead of links\n");
     printf("  -P, --no-dereference     - don't follow links in source\n");
-    printf("  -p, --preserve           - preserve permissions, ownership, timestamps, extended attributes\n");
+    printf("  -p, --preserve           - preserve permissions, ownership, timestamps (see also --copy-xattrs)\n");
     printf("  -s, --direct             - open files with O_DIRECT\n");
     printf("  -S, --sparse             - create sparse files when possible\n");
     printf("      --progress <N>       - print progress every N seconds\n");
@@ -150,6 +151,7 @@ int main(int argc, char** argv)
         {"daos-preserve"        , required_argument, 0, 'D'},
         {"input"                , required_argument, 0, 'i'},
         {"chunksize"            , required_argument, 0, 'k'},
+        {"xattrs"               , required_argument, 0, 'e'},
         {"dereference"          , no_argument      , 0, 'L'},
         {"no-dereference"       , no_argument      , 0, 'P'},
         {"preserve"             , no_argument      , 0, 'p'},
@@ -168,7 +170,7 @@ int main(int argc, char** argv)
     int usage = 0;
     while(1) {
         int c = getopt_long(
-                    argc, argv, "b:d:g:i:k:LPpsSvqh",
+                    argc, argv, "b:d:e:g:i:k:LPpsSvqh",
                     long_options, &option_index
                 );
 
@@ -229,6 +231,15 @@ int main(int argc, char** argv)
                         MFU_LOG(MFU_LOG_INFO, "Debug level `%s' not recognized. " \
                             "Defaulting to `info'.", optarg);
                     }
+                }
+                break;
+            case 'e':
+                mfu_copy_opts->copy_xattrs = parse_copy_xattrs_option(optarg);
+                if (mfu_copy_opts->copy_xattrs == XATTR_COPY_INVAL) {
+                    if (rank == 0) {
+                        MFU_LOG(MFU_LOG_ERR, "Unrecognized option '%s' for --xattrs", optarg);
+                    }
+                    usage = 1;
                 }
                 break;
 #ifdef LUSTRE_SUPPORT
