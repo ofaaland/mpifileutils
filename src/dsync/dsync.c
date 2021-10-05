@@ -74,7 +74,7 @@ static void print_usage(void)
     printf("  -s, --direct            - open files with O_DIRECT\n");
     printf("      --link-dest <DIR>   - hardlink to files in DIR when unchanged\n");
     printf("  -S, --sparse            - create sparse files when possible\n");
-    printf("  -x, --copy-xattrs <N>   - copy xattrs (default 2)\n");
+    printf("  -x, --copy-xattrs <N>   - copy xattrs (default 1)\n");
     printf("      --progress <N>      - print progress every N seconds\n");
     printf("  -v, --verbose           - verbose output\n");
     printf("  -q, --quiet             - quiet output\n");

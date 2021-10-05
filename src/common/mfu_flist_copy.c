@@ -3266,7 +3266,7 @@ mfu_copy_opts_t* mfu_copy_opts_new(void)
     opts->preserve = false;
 
     /* By default, do not copy special to Lustre (which set striping) */
-    opts->copy_xattrs = XATTR_COPY_ALL;
+    opts->copy_xattrs = XATTR_SKIP_LUSTRE;
 
     /* By default, don't dereference source symbolic links. 
      * This is not a perfect opposite of no_dereference */
