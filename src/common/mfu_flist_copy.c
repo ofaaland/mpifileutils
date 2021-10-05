@@ -347,7 +347,9 @@ static int mfu_copy_xattrs(
             } else if (copy_opts->copy_xattrs == XATTR_SKIP_ALL) {
                 skip_xattr = 1;
             } else if (
-                        /* list from lustre source file lustre_idl.h */
+                /* ignore xattrs lustre treats specially */
+                /* list from lustre source file lustre_idl.h */
+                        strncmp(name,"lustre.",strlen("lustre.")) == 0 ||
                         strcmp(name,"som") == 0 || strcmp(name,"lov") == 0 ||
                         strcmp(name,"lma") == 0 || strcmp(name,"lmv") == 0 ||
                         strcmp(name,"dmv") == 0 || strcmp(name,"link") == 0 ||
@@ -355,7 +357,6 @@ static int mfu_copy_xattrs(
                         strcmp(name,"hsm") == 0 || strcmp(name,"lfsck_bitmap") == 0 ||
                         strcmp(name,"dummy") == 0
                 ) {
-                /* ignore xattrs lustre treats specially */
                 skip_xattr = 1;
             }
 
