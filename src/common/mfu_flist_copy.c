@@ -350,12 +350,12 @@ static int mfu_copy_xattrs(
                 /* ignore xattrs lustre treats specially */
                 /* list from lustre source file lustre_idl.h */
                 if (    strncmp(name,"lustre.",strlen("lustre.")) == 0 ||
-                        strcmp(name,"som") == 0 || strcmp(name,"lov") == 0 ||
-                        strcmp(name,"lma") == 0 || strcmp(name,"lmv") == 0 ||
-                        strcmp(name,"dmv") == 0 || strcmp(name,"link") == 0 ||
-                        strcmp(name,"fid") == 0 || strcmp(name,"version") == 0 ||
-                        strcmp(name,"hsm") == 0 || strcmp(name,"lfsck_bitmap") == 0 ||
-                        strcmp(name,"dummy") == 0)
+                        strcmp(name,"trusted.som") == 0 || strcmp(name,"trusted.lov") == 0 ||
+                        strcmp(name,"trusted.lma") == 0 || strcmp(name,"trusted.lmv") == 0 ||
+                        strcmp(name,"trusted.dmv") == 0 || strcmp(name,"trusted.link") == 0 ||
+                        strcmp(name,"trusted.fid") == 0 || strcmp(name,"trusted.version") == 0 ||
+                        strcmp(name,"trusted.hsm") == 0 || strcmp(name,"trusted.lfsck_bitmap") == 0 ||
+                        strcmp(name,"trusted.dummy") == 0)
                 {
                     skip_xattr = 1;
                     MFU_LOG(MFU_LOG_WARN, "Skipping aribute name=%s on `%s'",
