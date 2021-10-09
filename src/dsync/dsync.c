@@ -3148,10 +3148,8 @@ int main(int argc, char **argv)
                 copy_opts->copy_xattrs = XATTR_SKIP_LUSTRE;
             else if (!strcmp(optarg,"all"))
                 copy_opts->copy_xattrs = XATTR_COPY_ALL;
-		/*
             else
                 copy_opts->copy_xattrs = XATTR_COPY_INVALID;
-		*/
             break;
         case 'R':
             mfu_progress_timeout = atoi(optarg);
@@ -3179,14 +3177,12 @@ int main(int argc, char **argv)
     }
 
     /* check that we got a valid copy_xattrs value */
-    /*
     if (copy_opts->copy_xattrs == XATTR_COPY_INVALID) {
         if (rank == 0) {
             MFU_LOG(MFU_LOG_ERR, "Unrecognized option for --copy-xattrs");
         }
         usage = 1;
     }
-    */
 
     /* check that we got a valid progress value */
     if (mfu_progress_timeout < 0) {
