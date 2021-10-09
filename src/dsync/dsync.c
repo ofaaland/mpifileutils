@@ -80,10 +80,6 @@ static void print_usage(void)
     printf("  -q, --quiet             - quiet output\n");
     printf("  -h, --help              - print usage\n");
     printf("\n");
-    printf("  copy-xattrs <N>:\n");
-    printf("               0 copy no xattrs; striping not copied for Lustre\n");
-    printf("               1 copy non-Lustre xattrs; striping not copied for Lustre\n");
-    printf("               2 copy all xattrs; striping is copied for Lustre\n");
     printf("For more information see https://mpifileutils.readthedocs.io.\n");
     fflush(stdout);
 }
