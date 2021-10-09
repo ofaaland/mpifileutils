@@ -63,6 +63,7 @@ static void print_usage(void)
     printf("  -b  --batch-files <N>   - batch files into groups of N during copy\n");
     printf("      --bufsize <SIZE>    - IO buffer size in bytes (default " MFU_BUFFER_SIZE_STR ")\n");
     printf("      --chunksize <SIZE>  - minimum work size per task in bytes (default " MFU_CHUNK_SIZE_STR ")\n");
+    printf("  -x, --copy-xattrs <OPT> - copy xattrs ('none', 'all', 'non-lustre')\n");
 #ifdef DAOS_SUPPORT
     printf("      --daos-prefix       - DAOS prefix for unified namespace path \n");
     printf("      --daos-api          - DAOS API in {DFS, DAOS} (default uses DFS for POSIX containers)\n");
@@ -74,7 +75,6 @@ static void print_usage(void)
     printf("  -s, --direct            - open files with O_DIRECT\n");
     printf("      --link-dest <DIR>   - hardlink to files in DIR when unchanged\n");
     printf("  -S, --sparse            - create sparse files when possible\n");
-    printf("  -x, --copy-xattrs <OPT> - copy xattrs ('none', 'all', 'non-lustre')\n");
     printf("      --progress <N>      - print progress every N seconds\n");
     printf("  -v, --verbose           - verbose output\n");
     printf("  -q, --quiet             - quiet output\n");
