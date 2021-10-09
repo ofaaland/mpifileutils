@@ -116,6 +116,7 @@ typedef struct {
 } mfu_walk_opts_t;
 
 typedef enum {
+	XATTR_COPY_INVALID,
 	XATTR_SKIP_ALL,
 	XATTR_SKIP_LUSTRE,
 	XATTR_COPY_ALL,
