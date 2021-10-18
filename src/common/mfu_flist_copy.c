@@ -951,9 +951,9 @@ static int mfu_copy_set_metadata_dirs(
 
 /* creates dir in destpath for specified item, identifies source path
  * that contains source dir, computes relative path to dir under source path,
- * and creates dir at same relative path under destpath, copies xattrs
- * when preserving permissions, which contains file striping info on Lustre,
- * returns 0 on success and -1 on error */
+ * and creates dir at same relative path under destpath, optionally copies
+ * xattrs (which contain striping information under Lustre), optionally
+ * preserves permissions, returns 0 on success and -1 on error */
 static int mfu_create_directory(
     mfu_flist list,                 /* flist holding target directory */
     uint64_t idx,                   /* index of target directory within its list */
@@ -1021,7 +1021,7 @@ static int mfu_create_directory(
      * creating / striping files in the directory */
 
     /* copy extended attributes on directory */
-    if (copy_opts->preserve) {
+    if (copy_opts->copy_xattrs) {
         int tmp_rc = mfu_copy_xattrs(list, idx, dest_path, copy_opts, mfu_src_file, mfu_dst_file);
         if (tmp_rc < 0) {
             rc = -1;
@@ -1195,7 +1195,7 @@ static int mfu_create_link(
     }
 
     /* set permissions on link */
-    if (copy_opts->preserve) {
+    if (copy_opts->copy_xattrs) {
         int xattr_rc = mfu_copy_xattrs(list, idx, dest_path, copy_opts, mfu_src_file, mfu_dst_file);
         if (xattr_rc < 0) {
             rc = -1;
@@ -1213,9 +1213,9 @@ static int mfu_create_link(
 
 /* creates inode in destpath for specified file, identifies source path
  * that contains source file, computes relative path to file under source path,
- * and creates file at same relative path under destpath, copies xattrs
- * when preserving permissions, which contains file striping info on Lustre,
- * returns 0 on success and -1 on error */
+ * and creates file at same relative path under destpath, optionally copies
+ * xattrs (which contain striping information under Lustre), optionally
+ * preserves permissions, returns 0 on success and -1 on error */
 static int mfu_create_file(
     mfu_flist list,
     uint64_t idx,
@@ -1268,7 +1268,7 @@ static int mfu_create_file(
     /* copy extended attributes, important to do this first before
      * writing data because some attributes tell file system how to
      * stripe data, e.g., Lustre */
-    if (copy_opts->preserve) {
+    if (copy_opts->copy_xattrs) {
         int tmp_rc = mfu_copy_xattrs(list, idx, dest_path, copy_opts, mfu_src_file, mfu_dst_file);
         if (tmp_rc < 0) {
             rc = -1;
