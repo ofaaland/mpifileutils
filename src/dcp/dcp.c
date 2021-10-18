@@ -79,7 +79,7 @@ void print_usage(void)
 #endif
     printf("  -b, --bufsize <SIZE>     - IO buffer size in bytes (default " MFU_BUFFER_SIZE_STR ")\n");
     printf("  -k, --chunksize <SIZE>   - work size per task in bytes (default " MFU_CHUNK_SIZE_STR ")\n");
-    printf("  -e, --copy-xattrs <OPT>  - copy xattrs (none, all, non-lustre, libattr)\n");
+    printf("  -e, --xattrs <OPT>       - copy xattrs (none, all, non-lustre, libattr)\n");
 #ifdef DAOS_SUPPORT
     printf("      --daos-prefix        - DAOS prefix for unified namespace path\n");
     printf("      --daos-api           - DAOS API in {DFS, DAOS} (default uses DFS for POSIX containers)\n");
@@ -151,7 +151,7 @@ int main(int argc, char** argv)
         {"daos-preserve"        , required_argument, 0, 'D'},
         {"input"                , required_argument, 0, 'i'},
         {"chunksize"            , required_argument, 0, 'k'},
-        {"copy-xattrs"          , required_argument, 0, 'e'},
+        {"xattrs"               , required_argument, 0, 'e'},
         {"dereference"          , no_argument      , 0, 'L'},
         {"no-dereference"       , no_argument      , 0, 'P'},
         {"preserve"             , no_argument      , 0, 'p'},
@@ -236,17 +236,17 @@ int main(int argc, char** argv)
                 break;
             case 'e':
                 copy_xattrs_used = 1;
-                if (!strcmp(optarg,"none")) {
+                if (strcmp(optarg,"none") == 0) {
                     mfu_copy_opts->copy_xattrs = XATTR_COPY_NONE;
-                } else if (!strcmp(optarg,"non-lustre")) {
+                } else if (strcmp(optarg,"non-lustre") == 0) {
                     mfu_copy_opts->copy_xattrs = XATTR_SKIP_LUSTRE;
-                } else if (!strcmp(optarg,"libattr")) {
+                } else if (strcmp(optarg,"libattr") == 0) {
                     mfu_copy_opts->copy_xattrs = XATTR_USE_LIBATTR;
-                } else if (!strcmp(optarg,"all")) {
+                } else if (strcmp(optarg,"all") == 0) {
                     mfu_copy_opts->copy_xattrs = XATTR_COPY_ALL;
                 } else {
                     if (rank == 0) {
-                        MFU_LOG(MFU_LOG_ERR, "Unrecognized option for --copy-xattrs");
+                        MFU_LOG(MFU_LOG_ERR, "Unrecognized option '%s' for --xattrs", optarg);
                     }
                     usage = 1;
                 }
