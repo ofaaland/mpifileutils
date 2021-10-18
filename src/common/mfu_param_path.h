@@ -116,6 +116,7 @@ typedef struct {
 } mfu_walk_opts_t;
 
 typedef enum {
+    XATTR_COPY_INVAL,
     XATTR_COPY_NONE,
     XATTR_SKIP_LUSTRE,
     XATTR_USE_LIBATTR,
@@ -142,6 +143,12 @@ typedef struct {
     int          grouplock_id;     /* Lustre grouplock ID */
     uint64_t     batch_files;      /* max batch size to copy files, 0 implies no limit */
 } mfu_copy_opts_t;
+
+/*
+ * Parse an option string provided by the user to determine
+ * which xattrs to copy from source to destination.
+ */
+attr_copy_t parse_copy_xattrs_option(char *optarg);
 
 /* Given a source item name, determine which source path this item
  * is contained within, extract directory components from source

@@ -236,15 +236,8 @@ int main(int argc, char** argv)
                 break;
             case 'e':
                 copy_xattrs_used = 1;
-                if (strcmp(optarg,"none") == 0) {
-                    mfu_copy_opts->copy_xattrs = XATTR_COPY_NONE;
-                } else if (strcmp(optarg,"non-lustre") == 0) {
-                    mfu_copy_opts->copy_xattrs = XATTR_SKIP_LUSTRE;
-                } else if (strcmp(optarg,"libattr") == 0) {
-                    mfu_copy_opts->copy_xattrs = XATTR_USE_LIBATTR;
-                } else if (strcmp(optarg,"all") == 0) {
-                    mfu_copy_opts->copy_xattrs = XATTR_COPY_ALL;
-                } else {
+                mfu_copy_opts->copy_xattrs = parse_copy_xattrs_option(optarg);
+                if (mfu_copy_opts->copy_xattrs == XATTR_COPY_INVAL) {
                     if (rank == 0) {
                         MFU_LOG(MFU_LOG_ERR, "Unrecognized option '%s' for --xattrs", optarg);
                     }
