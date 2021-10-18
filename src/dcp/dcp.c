@@ -168,7 +168,6 @@ int main(int argc, char** argv)
     /* Parse options */
     unsigned long long bytes = 0;
     int usage = 0;
-    int copy_xattrs_used = 0;
     while(1) {
         int c = getopt_long(
                     argc, argv, "b:d:e:g:i:k:LPpsSvqh",
@@ -235,7 +234,6 @@ int main(int argc, char** argv)
                 }
                 break;
             case 'e':
-                copy_xattrs_used = 1;
                 mfu_copy_opts->copy_xattrs = parse_copy_xattrs_option(optarg);
                 if (mfu_copy_opts->copy_xattrs == XATTR_COPY_INVAL) {
                     if (rank == 0) {
@@ -343,14 +341,6 @@ int main(int argc, char** argv)
                     printf("?? getopt returned character code 0%o ??\n", c);
                 }
         }
-    }
-
-    /* copy_xattrs only vaid with preserve */
-    if (mfu_copy_opts->preserve == false && copy_xattrs_used == 1) {
-        if (rank == 0) {
-            MFU_LOG(MFU_LOG_ERR, "Copy-xattrs may only be used with --preserve");
-        }
-        usage = 1;
     }
 
     /* check that we got a valid progress value */
