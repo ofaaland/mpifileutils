@@ -1655,6 +1655,9 @@ static int dsync_strmap_compare(
         tmp_rc = dsync_strmap_item_index(src_map, key, &src_index);
         assert(tmp_rc == 0);
 
+        MFU_LOG(MFU_LOG_INFO, "Rank %d Examining source key %s", rank,
+		key);
+
         /* get index of destination file */
         uint64_t dst_index;
         tmp_rc = dsync_strmap_item_index(dst_map, key, &dst_index);
