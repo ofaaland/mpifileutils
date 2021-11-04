@@ -925,8 +925,7 @@ static int dsync_strmap_compare_data(
                 mfu_src_file, mfu_dst_file);
 
         if (compare_rc > 0 && options.dry_run && options.verbose)
-            MFU_LOG(MFU_LOG_INFO, "Rank %d Path %s file contents differ", -1,
-                    src_p->name);
+            MFU_LOG(MFU_LOG_INFO, "Path %s file contents differ", src_p->name);
 
         if (compare_rc == -1) {
             /* we hit an error while reading */
@@ -1212,8 +1211,7 @@ static int dsync_strmap_compare_lite(
             dsync_strmap_item_update(dst_map, name, DCMPF_CONTENT, DCMPS_DIFFER);
 
             if (options.dry_run && options.verbose)
-                MFU_LOG(MFU_LOG_INFO, "Rank %d Path %s sizes or mtimes differ", -2,
-                    key);
+                MFU_LOG(MFU_LOG_INFO, "Path %s sizes or mtimes differ", key);
 
             /* mark file to be deleted from destination, copied from source */
             if (!options.dry_run || use_hardlinks) {
@@ -1671,8 +1669,7 @@ static int dsync_strmap_compare(
         if (tmp_rc) {
             /* item only exists in the source */
             if (options.dry_run && options.verbose)
-                MFU_LOG(MFU_LOG_INFO, "Rank %d Path %s exists only in source", rank,
-                    key);
+                MFU_LOG(MFU_LOG_INFO, "Path %s exists only in source", key);
 
             dsync_strmap_item_update(src_map, key, DCMPF_EXIST, DCMPS_ONLY_SRC);
 
@@ -1698,8 +1695,7 @@ static int dsync_strmap_compare(
         assert(tmp_rc >= 0);
 
         if (tmp_rc > 0 && options.dry_run && options.verbose)
-            MFU_LOG(MFU_LOG_INFO, "Rank %d Path %s metadata differs", rank,
-                key);
+            MFU_LOG(MFU_LOG_INFO, "Path %s metadata differs", key);
 
         /* add any item that is in both source and destination to meta
          * refresh list, only include those that have different metadata. */
@@ -1781,8 +1777,7 @@ static int dsync_strmap_compare(
         if (state == DCMPS_DIFFER) {
             /* file size is different, their contents should be different */
             if (options.dry_run && options.verbose)
-                MFU_LOG(MFU_LOG_INFO, "Rank %d Path %s file size differs", rank,
-                    key);
+                MFU_LOG(MFU_LOG_INFO, "Path %s file size differs", key);
 
             dsync_strmap_item_update(src_map, key, DCMPF_CONTENT, DCMPS_DIFFER);
             dsync_strmap_item_update(dst_map, key, DCMPF_CONTENT, DCMPS_DIFFER);
