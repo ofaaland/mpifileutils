@@ -1187,7 +1187,6 @@ static int dsync_strmap_compare_lite(
     for (idx = 0; idx < size; idx++) {
         /* lookup name of file based on id to send to strmap updata call */
         const char* name = mfu_flist_file_get_name(src_compare_list, idx);
-        const char* key = name;
 
         /* ignore prefix portion of path to use as key */
         name += strlen_prefix;
@@ -1211,7 +1210,7 @@ static int dsync_strmap_compare_lite(
             dsync_strmap_item_update(dst_map, name, DCMPF_CONTENT, DCMPS_DIFFER);
 
             if (options.verbose > 1)
-                MFU_LOG(MFU_LOG_INFO, "Path %s sizes or mtimes differ", key);
+                MFU_LOG(MFU_LOG_INFO, "Path %s sizes/mtimes differ", name);
 
             /* mark file to be deleted from destination, copied from source */
             if (!options.dry_run || use_hardlinks) {
