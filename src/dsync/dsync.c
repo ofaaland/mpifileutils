@@ -1694,7 +1694,8 @@ static int dsync_strmap_compare(
              key);
         assert(tmp_rc >= 0);
 
-        if (tmp_rc > 0 && options.dry_run && options.verbose)
+        /* key for the root has length 0, which would make a confusing message */
+        if (tmp_rc > 0 && strlen(key) > 0 && options.dry_run && options.verbose)
             MFU_LOG(MFU_LOG_INFO, "Path %s metadata differs", key);
 
         /* add any item that is in both source and destination to meta
