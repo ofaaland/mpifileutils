@@ -924,7 +924,7 @@ static int dsync_strmap_compare_data(
                 overwrite, copy_opts, count_bytes_read, count_bytes_written, compare_prog,
                 mfu_src_file, mfu_dst_file);
 
-        if (compare_rc > 0 && options.dry_run && options.verbose)
+        if (compare_rc > 0 && options.verbose > 1)
             MFU_LOG(MFU_LOG_INFO, "Path %s file contents differ", src_p->name);
 
         if (compare_rc == -1) {
@@ -1210,7 +1210,7 @@ static int dsync_strmap_compare_lite(
             dsync_strmap_item_update(src_map, name, DCMPF_CONTENT, DCMPS_DIFFER);
             dsync_strmap_item_update(dst_map, name, DCMPF_CONTENT, DCMPS_DIFFER);
 
-            if (options.dry_run && options.verbose)
+            if (options.verbose > 1)
                 MFU_LOG(MFU_LOG_INFO, "Path %s sizes or mtimes differ", key);
 
             /* mark file to be deleted from destination, copied from source */
@@ -1668,7 +1668,7 @@ static int dsync_strmap_compare(
         tmp_rc = dsync_strmap_item_index(dst_map, key, &dst_index);
         if (tmp_rc) {
             /* item only exists in the source */
-            if (options.dry_run && options.verbose)
+            if (options.verbose > 1)
                 MFU_LOG(MFU_LOG_INFO, "Path %s exists only in source", key);
 
             dsync_strmap_item_update(src_map, key, DCMPF_EXIST, DCMPS_ONLY_SRC);
@@ -1695,7 +1695,7 @@ static int dsync_strmap_compare(
         assert(tmp_rc >= 0);
 
         /* key for the root has length 0, which would make a confusing message */
-        if (tmp_rc > 0 && strlen(key) > 0 && options.dry_run && options.verbose)
+        if (tmp_rc > 0 && strlen(key) > 0 && options.verbose > 1)
             MFU_LOG(MFU_LOG_INFO, "Path %s metadata differs", key);
 
         /* add any item that is in both source and destination to meta
@@ -1777,7 +1777,7 @@ static int dsync_strmap_compare(
         assert(tmp_rc == 0);
         if (state == DCMPS_DIFFER) {
             /* file size is different, their contents should be different */
-            if (options.dry_run && options.verbose)
+            if (options.verbose > 1)
                 MFU_LOG(MFU_LOG_INFO, "Path %s file size differs", key);
 
             dsync_strmap_item_update(src_map, key, DCMPF_CONTENT, DCMPS_DIFFER);
