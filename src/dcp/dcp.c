@@ -79,7 +79,7 @@ void print_usage(void)
 #endif
     printf("  -b, --bufsize <SIZE>     - IO buffer size in bytes (default " MFU_BUFFER_SIZE_STR ")\n");
     printf("  -k, --chunksize <SIZE>   - work size per task in bytes (default " MFU_CHUNK_SIZE_STR ")\n");
-    printf("  -e, --xattrs <OPT>       - copy xattrs (none, all, non-lustre, libattr)\n");
+    printf("  -X, --xattrs <OPT>       - copy xattrs (none, all, non-lustre, libattr)\n");
 #ifdef DAOS_SUPPORT
     printf("      --daos-prefix        - DAOS prefix for unified namespace path\n");
     printf("      --daos-api           - DAOS API in {DFS, DAOS} (default uses DFS for POSIX containers)\n");
@@ -91,7 +91,7 @@ void print_usage(void)
     printf("  -i, --input <file>       - read source list from file\n");
     printf("  -L, --dereference        - copy original files instead of links\n");
     printf("  -P, --no-dereference     - don't follow links in source\n");
-    printf("  -p, --preserve           - preserve permissions, ownership, timestamps (see also --copy-xattrs)\n");
+    printf("  -p, --preserve           - preserve permissions, ownership, timestamps (see also --xattrs)\n");
     printf("  -s, --direct             - open files with O_DIRECT\n");
     printf("  -S, --sparse             - create sparse files when possible\n");
     printf("      --progress <N>       - print progress every N seconds\n");

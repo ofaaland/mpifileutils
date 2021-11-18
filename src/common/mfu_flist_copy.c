@@ -350,8 +350,9 @@ static int mfu_copy_xattrs(
             } else if (copy_opts->copy_xattrs == XATTR_COPY_NONE) {
                 copy_xattr = 0;
             } else if (copy_opts->copy_xattrs == XATTR_USE_LIBATTR) {
-                if (attr_copy_action(name, &ctx) == ATTR_ACTION_SKIP)
+                if (attr_copy_action(name, &ctx) == ATTR_ACTION_SKIP) {
                     copy_xattr = 0;
+		}
             } else if (copy_opts->copy_xattrs == XATTR_SKIP_LUSTRE) {
                 /* ignore xattrs lustre treats specially */
                 /* list from lustre source file lustre_idl.h */

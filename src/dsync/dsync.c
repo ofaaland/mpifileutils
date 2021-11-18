@@ -3049,7 +3049,7 @@ int main(int argc, char **argv)
 
     while (1) {
         int c = getopt_long(
-            argc, argv, "b:cDe:so:LPSvqh",
+            argc, argv, "b:cDX:so:LPSvqh",
             long_options, &option_index
         );
 
