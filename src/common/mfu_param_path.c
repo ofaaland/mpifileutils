@@ -309,17 +309,21 @@ static void mfu_unpack_param(const char** pptr, mfu_param_path* param)
  */
 attr_copy_t parse_copy_xattrs_option(char *optarg)
 {
-    if (strcmp(optarg,"none") == 0)
+    if (strcmp(optarg,"none") == 0) {
         return XATTR_COPY_NONE;
+    }
 
-    if (strcmp(optarg,"non-lustre") == 0)
+    if (strcmp(optarg,"non-lustre") == 0) {
         return XATTR_SKIP_LUSTRE;
+    }
 
-    if (strcmp(optarg,"libattr") == 0)
+    if (strcmp(optarg,"libattr") == 0) {
         return XATTR_USE_LIBATTR;
+    }
 
-    if (strcmp(optarg,"all") == 0)
+    if (strcmp(optarg,"all") == 0) {
         return XATTR_COPY_ALL;
+    }
 
     return XATTR_COPY_INVAL;
 }
