@@ -80,6 +80,11 @@ function sync_and_verify()
 		return 0
 	fi
 
+	if [ $opt = "libattr" -a $(id -u) -ne 0 ]; then
+		echo "SKIPPED verify of option $opt, need root to test"
+		return 0
+	fi
+
 	set -e
 	rm -f $destdir/$name
 
