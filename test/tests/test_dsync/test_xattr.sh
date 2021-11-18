@@ -128,6 +128,7 @@ function sync_and_verify()
 		echo "dest:"
 		cat $destlog
 		echo =======================
+		exit 1
 	fi
 
 	rm $srclog $destlog
