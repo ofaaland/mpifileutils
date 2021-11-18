@@ -38,9 +38,11 @@ function set_other_xattrs()
 {
 	fname=$1
 
+	set -e
 	for attrname in ${other_xattr_names[*]}; do
 		attr -s $attrname -V "$attrname:1234567890" $fname
 	done
+	set +e
 }
 
 function list_all_xattrs()
