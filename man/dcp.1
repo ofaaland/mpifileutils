@@ -60,17 +60,6 @@ The default chunksize is 64MB.
 .UNINDENT
 .INDENT 0.0
 .TP
-.B \-\-xattrs WHICH
-Copy extended attributes ("xattrs") from source files to target files.  WHICH
-determines which xattrs are copied.  Options are to copy no xattrs, all xattrs,
-xattrs not excluded by /etc/xattr.conf, or all xattrs except those which have
-special meaning to lustre.  Certain xattrs control lustre features on a
-file-by-file basis, such as how the file data is distributed across Lustre
-servers.  Values must be in {none, all, libattr, non-lustre}.  The default is
-non-lustre.
-.UNINDENT
-.INDENT 0.0
-.TP
 .B \-\-daos\-prefix PREFIX
 Specify the DAOS prefix to be used. This is only necessary
 if copying a subset of a POSIX container in DAOS using a
