@@ -339,21 +339,16 @@ static int mfu_copy_xattrs(
              * allocate something bigger as needed */
             size_t val_bufsize = 1024;
             void* val = (void*) MFU_MALLOC(val_bufsize);
-            int copy_xattr = 1;
+            int copy_xattr;
 
             /* lookup value for name */
             ssize_t val_size;
             int got_val = 0;
 
-            if (copy_opts->copy_xattrs == XATTR_COPY_ALL) {
-                copy_xattr = 1;
-            } else if (copy_opts->copy_xattrs == XATTR_COPY_NONE) {
-                copy_xattr = 0;
-            } else if (copy_opts->copy_xattrs == XATTR_USE_LIBATTR) {
+            copy_xattr = 1; /* copy unless indicated below not to */
+            if (copy_opts->copy_xattrs == XATTR_USE_LIBATTR) {
                 if (attr_copy_action(name, &ctx) == ATTR_ACTION_SKIP) {
                     copy_xattr = 0;
-                } else {
-                    copy_xattr = 1;
                 }
             } else if (copy_opts->copy_xattrs == XATTR_SKIP_LUSTRE) {
                 /* ignore xattrs lustre treats specially */
@@ -367,8 +362,6 @@ static int mfu_copy_xattrs(
                         strcmp(name,"trusted.dummy") == 0)
                 {
                     copy_xattr = 0;
-                } else {
-                    copy_xattr = 1;
                 }
             }
 
