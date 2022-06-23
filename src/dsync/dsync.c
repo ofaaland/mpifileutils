@@ -75,7 +75,7 @@ static void print_usage(void)
     printf("      --link-dest <DIR>   - hardlink to files in DIR when unchanged\n");
     printf("  -S, --sparse            - create sparse files when possible\n");
     printf("      --progress <N>      - print progress every N seconds\n");
-    printf("  -v, --verbose           - verbose output\n");
+    printf("  -v, --verbose           - verbose output (repeat for more output)\n");
     printf("  -q, --quiet             - quiet output\n");
     printf("  -h, --help              - print usage\n");
     printf("\n");
@@ -779,6 +779,7 @@ static void dsync_strmap_compare_data_link_dest(
         /* get length of file that we should compare (bytes) */
         off_t filesize = (off_t)src_p->file_size;
         
+	/* OLAF byte-by-byte comparison called from here */
         /* compare the contents of the files */
         int compare_rc = mfu_compare_contents(src_p->name, dst_p->name, offset, length, filesize,
                 overwrite, copy_opts, count_bytes_read, count_bytes_written, compare_prog,
@@ -1240,8 +1241,11 @@ static void print_comparison_stats(
     MPI_Allreduce(&bytes_read,    &total_bytes_read,    1, MPI_UINT64_T, MPI_SUM, MPI_COMM_WORLD);
     MPI_Allreduce(&bytes_written, &total_bytes_written, 1, MPI_UINT64_T, MPI_SUM, MPI_COMM_WORLD);
 
-    /* if the verbose option is set print the timing data
-     * report compare count, time, and rate */
+    /* if verbose == 1, print the timing data
+     * report compare count, time, and rate
+     * if verbose == 2, also print the paths whose
+     * data differed but mtimes/sizes matched
+     */
     if (mfu_rank == 0) {
        /* get the amount of time the compare function took */
        double time_diff = end_compare - start_compare;

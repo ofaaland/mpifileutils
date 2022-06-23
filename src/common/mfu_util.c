@@ -701,6 +701,7 @@ void mfu_stat_set_ctimes (struct stat* sb, uint64_t secs, uint64_t nsecs)
 #endif
 }
 
+/* OLAF byte-by-byte comparison performed here */
 /* compares contents of two files and optionally overwrite dest with source,
  * returns -1 on error, 0 if equal, 1 if different */
 int mfu_compare_contents(
