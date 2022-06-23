@@ -68,6 +68,8 @@ static void print_usage(void)
     printf("      --daos-api          - DAOS API in {DFS, DAOS} (default uses DFS for POSIX containers)\n");
 #endif
     printf("  -c, --contents          - read and compare file contents rather than compare size and mtime\n");
+    printf("  -C, --contents-output <file> - write list of files with differing contents but common size and time to file\n");
+    printf("  -t, --text              - use with -C; write output list to file in ascii format\n");
     printf("  -D, --delete            - delete extraneous files from target\n");
     printf("  -L, --dereference       - copy original files instead of links\n");
     printf("  -P, --no-dereference    - don't follow links in source\n"); 
@@ -954,6 +956,9 @@ static int dsync_strmap_compare_data(
     /* execute logical OR over chunks for each file */
     mfu_file_chunk_list_lor(src_compare_list, src_head, vals, results);
 
+    /* report list of files whose contents differ but size+mtime match */
+    mfu_flist differ_flist = mfu_flist_new();
+
     /* unpack contents of recv buffer & store results in strmap */
     for (i = 0; i < size; i++) {
         /* lookup name of file based on id to send to strmap updata call */
@@ -970,6 +975,8 @@ static int dsync_strmap_compare_data(
             /* update to say contents of the files were found to be different */
             dsync_strmap_item_update(src_map, name, DCMPF_CONTENT, DCMPS_DIFFER);
             dsync_strmap_item_update(dst_map, name, DCMPF_CONTENT, DCMPS_DIFFER);
+
+            mfu_flist_file_copy(src_compare_list, i, differ_flist);
 
             /* mark file to be deleted from destination, copied from source */
             if (use_hardlinks) {
@@ -992,7 +999,18 @@ static int dsync_strmap_compare_data(
         }
     }
 
+    /* write data to cache file */
+    mfu_flist_summarize(differ_flist);
+    if (copy_opts->contents_output != NULL) {
+        if (!copy_opts->text) {
+            mfu_flist_write_cache(copy_opts->contents_output, differ_flist);
+        } else {
+            mfu_flist_write_text(copy_opts->contents_output, differ_flist);
+        }
+    }
+
     /* free memory */
+    mfu_flist_free(&differ_flist);
     mfu_free(&results);
     mfu_free(&vals);
     mfu_file_chunk_list_free(&src_head);
@@ -3010,6 +3028,12 @@ int main(int argc, char **argv)
     /* flag to check for sync option */
     copy_opts->do_sync = 1;
 
+    copy_opts->text = 0;
+    /* whether output file should be text format */
+
+    copy_opts->contents_output = NULL;
+    /* output list of files with differing contents */
+
 #ifdef DAOS_SUPPORT
     /* DAOS vars */ 
     daos_args_t* daos_args = daos_args_new();    
@@ -3025,6 +3049,8 @@ int main(int argc, char **argv)
         {"daos-prefix",    1, 0, 'Y'},
         {"daos-api",       1, 0, 'y'},
         {"contents",       0, 0, 'c'},
+        {"contents-output", 1, 0, 'C'},
+        {"text",           0, 0, 't'},
         {"delete",         0, 0, 'D'},
         {"dereference",    0, 0, 'L'},
         {"no-dereference", 0, 0, 'P'},
@@ -3109,6 +3135,12 @@ int main(int argc, char **argv)
         case 'c':
             options.contents++;
             break;
+        case 'C':
+            copy_opts->contents_output = MFU_STRDUP(optarg);
+            break;
+        case 't':
+            copy_opts->text++;
+            break;
         case 'n':
             options.dry_run++;
             break;
@@ -3178,6 +3210,14 @@ int main(int argc, char **argv)
     if (mfu_progress_timeout < 0) {
         if (rank == 0) {
             MFU_LOG(MFU_LOG_ERR, "Seconds in --progress must be non-negative: %d invalid", mfu_progress_timeout);
+        }
+        usage = 1;
+    }
+
+    /* no --text without --contents-output */
+    if (copy_opts->text > 0 && copy_opts->contents_output == NULL) {
+        if (rank == 0) {
+            MFU_LOG(MFU_LOG_ERR, "Option --text is valid only when --contents-output is used.");
         }
         usage = 1;
     }

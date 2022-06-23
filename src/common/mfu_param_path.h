@@ -142,6 +142,8 @@ typedef struct {
     char*        block_buf2;       /* another buffer to read / write data */
     int          grouplock_id;     /* Lustre grouplock ID */
     uint64_t     batch_files;      /* max batch size to copy files, 0 implies no limit */
+    int          text;             /* whether output file should be text format */
+    char*        contents_output;  /* file listing of files with differing contents */
 } mfu_copy_opts_t;
 
 /*
