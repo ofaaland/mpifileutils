@@ -920,6 +920,7 @@ static int dsync_strmap_compare_data(
         /* get length of file that we should compare (bytes) */
         off_t filesize = (off_t)src_p->file_size;
         
+	/* OLAF byte-by-byte comparison called from here */
         /* compare the contents of the files */
         int compare_rc = mfu_compare_contents(src_p->name, dst_p->name, offset, length, filesize,
                 overwrite, copy_opts, count_bytes_read, count_bytes_written, compare_prog,

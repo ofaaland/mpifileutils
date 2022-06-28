@@ -835,6 +835,7 @@ static int dcmp_strmap_compare_data(
         /* get size of file that we should compare (bytes) */
         off_t filesize = (off_t)src_p->file_size;
 
+	/* OLAF byte-by-byte comparison called from here */
         /* compare the contents of the files */
         int overwrite = 0;
         int compare_rc = mfu_compare_contents(src_p->name, dst_p->name, offset, length, filesize,
