@@ -72,6 +72,7 @@ mfu_file_chunk* mfu_file_chunk_list_alloc(mfu_flist list, uint64_t chunk_size)
     uint64_t total;
     MPI_Allreduce(&count, &total, 1, MPI_UINT64_T, MPI_SUM, MPI_COMM_WORLD);
 
+	/* OLAF what does "global offset of our first chunk" mean? */
     /* get global offset of our first chunk */
     uint64_t offset;
     MPI_Exscan(&count, &offset, 1, MPI_UINT64_T, MPI_SUM, MPI_COMM_WORLD);
