@@ -968,6 +968,37 @@ static int dsync_strmap_compare_data(
     /* execute logical OR over chunks for each file */
     mfu_file_chunk_list_lor(src_compare_list, src_head, vals, results);
 
+	/* OLAF try printing list of files and results for each */
+	/*
+	 * This prints ONLY files whose data is compared.
+	 *
+	 * It appears data is only compared if file metadata matches, but the
+	 * --contents option was given.
+	 *
+	 * If file metadata indicates a change (ie size or mtime do not match)
+	 * then the data is NOT compared, the file is not in the lists provided
+	 * to this function.  The destination is unlinked or truncated (not
+	 * sure which) and new data is copied over.
+	 *
+	 * result[idx] == 1 means the file contents differ.
+	 */
+    for (idx = 0; idx < size; idx++) {
+	uint64_t fsize = 0;
+	const char *src, *dest;
+	mfu_filetype type;
+
+	src = mfu_flist_file_get_name(src_compare_list, idx);
+	dest = mfu_flist_file_get_name(dst_compare_list, idx);
+
+        type = mfu_flist_file_get_type(src_compare_list, idx);
+        if (type == MFU_TYPE_FILE) {
+            fsize = mfu_flist_file_get_size(src_compare_list, idx);
+        }
+
+       printf("%lu: result:%-10s src:%s fsize:%lu\n",
+       		idx, results[idx] ? "different" : "same", src, fsize);
+    }
+
     /* unpack contents of recv buffer & store results in strmap */
     for (i = 0; i < size; i++) {
         /* lookup name of file based on id to send to strmap updata call */
