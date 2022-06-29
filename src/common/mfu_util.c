@@ -701,7 +701,12 @@ void mfu_stat_set_ctimes (struct stat* sb, uint64_t secs, uint64_t nsecs)
 #endif
 }
 
-/* OLAF byte-by-byte comparison performed here */
+/*
+ * OLAF byte-by-byte comparison performed here.  Since we return
+ * 1 if there was no error and files differed, the caller can
+ * potentially check for (rc == 1 && metadata_not_different)
+ * to emit the filename or add it to a list emitted later.
+ */
 /* compares contents of two files and optionally overwrite dest with source,
  * returns -1 on error, 0 if equal, 1 if different */
 int mfu_compare_contents(
