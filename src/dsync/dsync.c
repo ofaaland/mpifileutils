@@ -820,6 +820,13 @@ static void dsync_strmap_compare_data_link_dest(
     /* execute logical OR over chunks for each file */
     mfu_file_chunk_list_lor(src_compare_list, src_head, vals, results);
 
+	/* OLAF at this point it seems like we should have the
+	 * results of comparisons for the files in our list,
+	 * in "results" where i is an index into our file list.
+	 * Below seems to imply (results[i]==0 && files differ)
+	 * but I am confused that's not (results[i]==1 && files differ)
+	 */
+
     /* unpack contents of recv buffer & store results in strmap */
     for (i = 0; i < size; i++) {
         /* get comparison results for this item */
