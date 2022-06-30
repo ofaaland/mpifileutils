@@ -784,7 +784,6 @@ static void dsync_strmap_compare_data_link_dest(
         /* get length of file that we should compare (bytes) */
         off_t filesize = (off_t)src_p->file_size;
         
-	/* OLAF byte-by-byte comparison called from here */
         /* compare the contents of the files */
         int compare_rc = mfu_compare_contents(src_p->name, dst_p->name, offset, length, filesize,
                 overwrite, copy_opts, count_bytes_read, count_bytes_written, compare_prog,
@@ -819,13 +818,6 @@ static void dsync_strmap_compare_data_link_dest(
 
     /* execute logical OR over chunks for each file */
     mfu_file_chunk_list_lor(src_compare_list, src_head, vals, results);
-
-	/* OLAF at this point it seems like we should have the
-	 * results of comparisons for the files in our list,
-	 * in "results" where i is an index into our file list.
-	 * Below seems to imply (results[i]==0 && files differ)
-	 * but I am confused that's not (results[i]==1 && files differ)
-	 */
 
     /* unpack contents of recv buffer & store results in strmap */
     for (i = 0; i < size; i++) {
