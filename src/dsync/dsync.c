@@ -1011,7 +1011,7 @@ static int dsync_strmap_compare_data(
 
 		src_name = mfu_flist_file_get_name(src_compare_list, idx);
 		MFU_LOG(MFU_LOG_INFO,
-			"source file:%s  contents:%-10s  metadata:%s\n",
+			"source file:%s  contents:%-10s  metadata:%s",
 			src_name, results[idx] ? "different" : "matches",
 			(types_match && sizes_match && mtimes_match) ? "matches" : "different",
 			types_match, sizes_match, mtimes_match);
