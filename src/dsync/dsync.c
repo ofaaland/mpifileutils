@@ -980,23 +980,42 @@ static int dsync_strmap_compare_data(
 	 * to this function.  The destination is unlinked or truncated (not
 	 * sure which) and new data is copied over.
 	 *
-	 * result[idx] == 1 means the file contents differ.
+	 * results[idx] == 1 means the file contents differ.
 	 */
     for (idx = 0; idx < size; idx++) {
-	uint64_t fsize = 0;
-	const char *src, *dest;
-	mfu_filetype type;
+	mfu_filetype src_type, dst_type;
+	uint64_t src_size = 0, dst_size = 0;
+	uint64_t src_mtime = 0, src_mtime_nsec = 0;    /* modify time / nanoseconds */
+	uint64_t dst_mtime = 0, dst_mtime_nsec = 0;    /* modify time / nanoseconds */
 
-	src = mfu_flist_file_get_name(src_compare_list, idx);
-	dest = mfu_flist_file_get_name(dst_compare_list, idx);
+        src_type = mfu_flist_file_get_type(src_compare_list, idx);
+        dst_type = mfu_flist_file_get_type(dst_compare_list, idx);
 
-        type = mfu_flist_file_get_type(src_compare_list, idx);
-        if (type == MFU_TYPE_FILE) {
-            fsize = mfu_flist_file_get_size(src_compare_list, idx);
+        if (src_type == MFU_TYPE_FILE) {
+            src_size = mfu_flist_file_get_size(src_compare_list, idx);
+            dst_size = mfu_flist_file_get_size(dst_compare_list, idx);
+
+	    src_mtime = mfu_flist_file_get_mtime(src_compare_list, idx);
+	    src_mtime_nsec = mfu_flist_file_get_mtime_nsec(src_compare_list, idx);
+	    dst_mtime = mfu_flist_file_get_mtime(dst_compare_list, idx);
+	    dst_mtime_nsec = mfu_flist_file_get_mtime_nsec(dst_compare_list, idx);
         }
 
-       printf("%lu: result:%-10s src:%s fsize:%lu\n",
-       		idx, results[idx] ? "different" : "same", src, fsize);
+	if (results[idx]) {
+		/* contents differed */
+		int types_match = (src_type == dst_type);
+		int sizes_match = (src_size == dst_size);
+		int mtimes_match = (src_mtime == dst_mtime) &&
+					(src_mtime_nsec == dst_mtime_nsec);
+		const char *src_name;
+
+		src_name = mfu_flist_file_get_name(src_compare_list, idx);
+		MFU_LOG(MFU_LOG_INFO,
+			"source file:%s  contents:%-10s  metadata:%s\n",
+			src_name, results[idx] ? "different" : "matches",
+			(types_match && sizes_match && mtimes_match) ? "matches" : "different",
+			types_match, sizes_match, mtimes_match);
+	}
     }
 
     /* unpack contents of recv buffer & store results in strmap */
