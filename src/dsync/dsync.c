@@ -962,46 +962,11 @@ static int dsync_strmap_compare_data(
     /* report list of files whose contents differ but size+mtime match */
     mfu_flist differ_flist = mfu_flist_new();
 
-    for (idx = 0; idx < size; idx++) {
-	mfu_filetype src_type, dst_type;
-	uint64_t src_size = 0, dst_size = 0;
-	uint64_t src_mtime = 0, src_mtime_nsec = 0;    /* modify time / nanoseconds */
-	uint64_t dst_mtime = 0, dst_mtime_nsec = 0;    /* modify time / nanoseconds */
-
-        src_type = mfu_flist_file_get_type(src_compare_list, idx);
-        dst_type = mfu_flist_file_get_type(dst_compare_list, idx);
-
-        if (src_type == MFU_TYPE_FILE) {
-            src_size = mfu_flist_file_get_size(src_compare_list, idx);
-            dst_size = mfu_flist_file_get_size(dst_compare_list, idx);
-
-	    src_mtime = mfu_flist_file_get_mtime(src_compare_list, idx);
-	    src_mtime_nsec = mfu_flist_file_get_mtime_nsec(src_compare_list, idx);
-	    dst_mtime = mfu_flist_file_get_mtime(dst_compare_list, idx);
-	    dst_mtime_nsec = mfu_flist_file_get_mtime_nsec(dst_compare_list, idx);
-        }
-
-	if (results[idx]) {
-		/* contents differed */
-		int types_match = (src_type == dst_type);
-		int sizes_match = (src_size == dst_size);
-		int mtimes_match = (src_mtime == dst_mtime) &&
-					(src_mtime_nsec == dst_mtime_nsec);
-		const char *src_name;
-
-		src_name = mfu_flist_file_get_name(src_compare_list, idx);
-		MFU_LOG(MFU_LOG_INFO, "%s", src_name);
-
-		mfu_flist_file_copy(src_compare_list, idx, differ_flist);
-	}
-    }
-
-	mfu_flist_write_text("/tmp/differ.txt", differ_flist);
-
     /* unpack contents of recv buffer & store results in strmap */
     for (i = 0; i < size; i++) {
         /* lookup name of file based on id to send to strmap updata call */
         const char* name = mfu_flist_file_get_name(src_compare_list, i);
+	const char* src_name = name;
 
         /* ignore prefix portion of path to use as key */
         name += strlen_prefix;
@@ -1016,6 +981,7 @@ static int dsync_strmap_compare_data(
             dsync_strmap_item_update(dst_map, name, DCMPF_CONTENT, DCMPS_DIFFER);
 
             MFU_LOG(MFU_LOG_INFO, "%s", src_name);
+            mfu_flist_file_copy(src_compare_list, i, differ_flist);
 
             /* mark file to be deleted from destination, copied from source */
             if (use_hardlinks) {
@@ -1037,6 +1003,8 @@ static int dsync_strmap_compare_data(
             }
         }
     }
+
+    mfu_flist_write_text("/tmp/differ.txt", differ_flist);
 
     /* free memory */
     mfu_flist_free(&differ_flist);
