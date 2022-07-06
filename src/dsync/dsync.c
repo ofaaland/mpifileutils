@@ -924,7 +924,6 @@ static int dsync_strmap_compare_data(
         /* get length of file that we should compare (bytes) */
         off_t filesize = (off_t)src_p->file_size;
         
-	/* OLAF byte-by-byte comparison called from here */
         /* compare the contents of the files */
         int compare_rc = mfu_compare_contents(src_p->name, dst_p->name, offset, length, filesize,
                 overwrite, copy_opts, count_bytes_read, count_bytes_written, compare_prog,
@@ -960,20 +959,9 @@ static int dsync_strmap_compare_data(
     /* execute logical OR over chunks for each file */
     mfu_file_chunk_list_lor(src_compare_list, src_head, vals, results);
 
-	/* OLAF try printing list of files and results for each */
-	/*
-	 * This prints ONLY files whose data is compared.
-	 *
-	 * It appears data is only compared if file metadata matches, but the
-	 * --contents option was given.
-	 *
-	 * If file metadata indicates a change (ie size or mtime do not match)
-	 * then the data is NOT compared, the file is not in the lists provided
-	 * to this function.  The destination is unlinked or truncated (not
-	 * sure which) and new data is copied over.
-	 *
-	 * results[idx] == 1 means the file contents differ.
-	 */
+    /* report list of files whose contents differ but size+mtime match */
+    mfu_flist differ_flist = mfu_flist_new();
+
     for (idx = 0; idx < size; idx++) {
 	mfu_filetype src_type, dst_type;
 	uint64_t src_size = 0, dst_size = 0;
@@ -1002,13 +990,13 @@ static int dsync_strmap_compare_data(
 		const char *src_name;
 
 		src_name = mfu_flist_file_get_name(src_compare_list, idx);
-		MFU_LOG(MFU_LOG_INFO,
-			"source file:%s  contents:%-10s  metadata:%s",
-			src_name, results[idx] ? "different" : "matches",
-			(types_match && sizes_match && mtimes_match) ? "matches" : "different",
-			types_match, sizes_match, mtimes_match);
+		MFU_LOG(MFU_LOG_INFO, "%s", src_name);
+
+		mfu_flist_file_copy(src_compare_list, idx, differ_flist);
 	}
     }
+
+	mfu_flist_write_text("/tmp/differ.txt", differ_flist);
 
     /* unpack contents of recv buffer & store results in strmap */
     for (i = 0; i < size; i++) {
@@ -1026,6 +1014,8 @@ static int dsync_strmap_compare_data(
             /* update to say contents of the files were found to be different */
             dsync_strmap_item_update(src_map, name, DCMPF_CONTENT, DCMPS_DIFFER);
             dsync_strmap_item_update(dst_map, name, DCMPF_CONTENT, DCMPS_DIFFER);
+
+            MFU_LOG(MFU_LOG_INFO, "%s", src_name);
 
             /* mark file to be deleted from destination, copied from source */
             if (use_hardlinks) {
@@ -1049,6 +1039,7 @@ static int dsync_strmap_compare_data(
     }
 
     /* free memory */
+    mfu_flist_free(&differ_flist);
     mfu_free(&results);
     mfu_free(&vals);
     mfu_file_chunk_list_free(&src_head);
