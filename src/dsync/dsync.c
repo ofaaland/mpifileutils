@@ -3034,10 +3034,10 @@ int main(int argc, char **argv)
     /* flag to check for sync option */
     copy_opts->do_sync = 1;
 
-    copy_opts->text = 1;
+    copy_opts->text = 0;
     /* whether output file should be text format */
 
-    copy_opts->content_output = "/tmp/differ.txt";
+    copy_opts->content_output = NULL;
     /* output list of files with differing contents */
 
 #ifdef DAOS_SUPPORT
@@ -3055,6 +3055,8 @@ int main(int argc, char **argv)
         {"daos-prefix",    1, 0, 'Y'},
         {"daos-api",       1, 0, 'y'},
         {"contents",       0, 0, 'c'},
+        {"content-output", 1, 0, 'C'},
+        {"text",           0, 0, 't'},
         {"delete",         0, 0, 'D'},
         {"dereference",    0, 0, 'L'},
         {"no-dereference", 0, 0, 'P'},
@@ -3138,6 +3140,12 @@ int main(int argc, char **argv)
 #endif
         case 'c':
             options.contents++;
+            break;
+        case 'C':
+            copy_opts->content_output = strdup(optarg);
+            break;
+        case 't':
+            copy_opts->text++;
             break;
         case 'n':
             options.dry_run++;
