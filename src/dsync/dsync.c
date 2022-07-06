@@ -3222,6 +3222,14 @@ int main(int argc, char **argv)
         usage = 1;
     }
 
+    /* no --text without --contents-output */
+    if (copy_opts->text > 0) {
+        if (rank == 0) {
+            MFU_LOG(MFU_LOG_ERR, "Option --text is valid only when --contents-output is used.");
+        }
+        usage = 1;
+    }
+
     /* Generate default output */
     if (list_empty(&options.outputs)) {
         /*
