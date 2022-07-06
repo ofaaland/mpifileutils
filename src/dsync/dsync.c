@@ -3144,7 +3144,7 @@ int main(int argc, char **argv)
             options.contents++;
             break;
         case 'C':
-            copy_opts->content_output = strdup(optarg);
+            copy_opts->content_output = MFU_STRDUP(optarg);
             break;
         case 't':
             copy_opts->text++;
