@@ -3057,7 +3057,7 @@ int main(int argc, char **argv)
         {"daos-prefix",    1, 0, 'Y'},
         {"daos-api",       1, 0, 'y'},
         {"contents",       0, 0, 'c'},
-        {"content-output", 1, 0, 'C'},
+        {"contents-output", 1, 0, 'C'},
         {"text",           0, 0, 't'},
         {"delete",         0, 0, 'D'},
         {"dereference",    0, 0, 'L'},
