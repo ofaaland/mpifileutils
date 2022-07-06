@@ -68,6 +68,8 @@ static void print_usage(void)
     printf("      --daos-api          - DAOS API in {DFS, DAOS} (default uses DFS for POSIX containers)\n");
 #endif
     printf("  -c, --contents          - read and compare file contents rather than compare size and mtime\n");
+    printf("  -C, --contents-output <file> - write list of files with differing contents but common size and time to file\n");
+    printf("  -t, --text              - use with -C; write output list to file in ascii format\n");
     printf("  -D, --delete            - delete extraneous files from target\n");
     printf("  -L, --dereference       - copy original files instead of links\n");
     printf("  -P, --no-dereference    - don't follow links in source\n"); 
