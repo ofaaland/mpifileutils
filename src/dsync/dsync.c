@@ -75,7 +75,7 @@ static void print_usage(void)
     printf("      --link-dest <DIR>   - hardlink to files in DIR when unchanged\n");
     printf("  -S, --sparse            - create sparse files when possible\n");
     printf("      --progress <N>      - print progress every N seconds\n");
-    printf("  -v, --verbose           - verbose output (repeat for more output)\n");
+    printf("  -v, --verbose           - verbose output\n");
     printf("  -q, --quiet             - quiet output\n");
     printf("  -h, --help              - print usage\n");
     printf("\n");
