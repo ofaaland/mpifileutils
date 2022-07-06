@@ -980,7 +980,6 @@ static int dsync_strmap_compare_data(
             dsync_strmap_item_update(src_map, name, DCMPF_CONTENT, DCMPS_DIFFER);
             dsync_strmap_item_update(dst_map, name, DCMPF_CONTENT, DCMPS_DIFFER);
 
-            MFU_LOG(MFU_LOG_INFO, "%s", src_name);
             mfu_flist_file_copy(src_compare_list, i, differ_flist);
 
             /* mark file to be deleted from destination, copied from source */
