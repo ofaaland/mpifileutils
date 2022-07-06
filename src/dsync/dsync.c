@@ -1003,7 +1003,14 @@ static int dsync_strmap_compare_data(
         }
     }
 
-    mfu_flist_write_text("/tmp/differ.txt", differ_flist);
+    /* write data to cache file */
+    if (copy_opts->content_output != NULL) {
+        if (!copy_opts->text) {
+            mfu_flist_write_cache(copy_opts->content_output, differ_flist);
+        } else {
+            mfu_flist_write_text(copy_opts->content_output, differ_flist);
+        }
+    }
 
     /* free memory */
     mfu_flist_free(&differ_flist);
@@ -3026,6 +3033,12 @@ int main(int argc, char **argv)
 
     /* flag to check for sync option */
     copy_opts->do_sync = 1;
+
+    copy_opts->text = 1;
+    /* whether output file should be text format */
+
+    copy_opts->content_output = "/tmp/differ.txt";
+    /* output list of files with differing contents */
 
 #ifdef DAOS_SUPPORT
     /* DAOS vars */ 
