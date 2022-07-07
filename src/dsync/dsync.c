@@ -1260,7 +1260,6 @@ static void print_comparison_stats(
 
     /* if the verbose option is set print the timing data
      * report compare count, time, and rate */
-     */
     if (mfu_rank == 0) {
        /* get the amount of time the compare function took */
        double time_diff = end_compare - start_compare;
