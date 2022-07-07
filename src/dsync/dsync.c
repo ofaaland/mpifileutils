@@ -1006,6 +1006,7 @@ static int dsync_strmap_compare_data(
     }
 
     /* write data to cache file */
+    mfu_flist_summarize(differ_flist);
     if (copy_opts->content_output != NULL) {
         if (!copy_opts->text) {
             mfu_flist_write_cache(copy_opts->content_output, differ_flist);
