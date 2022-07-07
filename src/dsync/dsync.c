@@ -1001,11 +1001,11 @@ static int dsync_strmap_compare_data(
 
     /* write data to cache file */
     mfu_flist_summarize(differ_flist);
-    if (copy_opts->content_output != NULL) {
+    if (copy_opts->contents_output != NULL) {
         if (!copy_opts->text) {
-            mfu_flist_write_cache(copy_opts->content_output, differ_flist);
+            mfu_flist_write_cache(copy_opts->contents_output, differ_flist);
         } else {
-            mfu_flist_write_text(copy_opts->content_output, differ_flist);
+            mfu_flist_write_text(copy_opts->contents_output, differ_flist);
         }
     }
 
@@ -3032,7 +3032,7 @@ int main(int argc, char **argv)
     copy_opts->text = 0;
     /* whether output file should be text format */
 
-    copy_opts->content_output = NULL;
+    copy_opts->contents_output = NULL;
     /* output list of files with differing contents */
 
 #ifdef DAOS_SUPPORT
@@ -3137,7 +3137,7 @@ int main(int argc, char **argv)
             options.contents++;
             break;
         case 'C':
-            copy_opts->content_output = MFU_STRDUP(optarg);
+            copy_opts->contents_output = MFU_STRDUP(optarg);
             break;
         case 't':
             copy_opts->text++;

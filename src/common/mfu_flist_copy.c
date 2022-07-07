@@ -3309,7 +3309,7 @@ void mfu_copy_opts_delete(mfu_copy_opts_t** popts)
       mfu_free(&opts->input_file);
       mfu_free(&opts->block_buf1);
       mfu_free(&opts->block_buf2);
-      mfu_free(&opts->content_output);
+      mfu_free(&opts->contents_output);
     }
 
     mfu_free(popts);
