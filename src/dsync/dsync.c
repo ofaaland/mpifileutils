@@ -1258,10 +1258,8 @@ static void print_comparison_stats(
     MPI_Allreduce(&bytes_read,    &total_bytes_read,    1, MPI_UINT64_T, MPI_SUM, MPI_COMM_WORLD);
     MPI_Allreduce(&bytes_written, &total_bytes_written, 1, MPI_UINT64_T, MPI_SUM, MPI_COMM_WORLD);
 
-    /* if verbose == 1, print the timing data
-     * report compare count, time, and rate
-     * if verbose == 2, also print the paths whose
-     * data differed but mtimes/sizes matched
+    /* if the verbose option is set print the timing data
+     * report compare count, time, and rate */
      */
     if (mfu_rank == 0) {
        /* get the amount of time the compare function took */
