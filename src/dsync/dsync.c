@@ -3215,7 +3215,7 @@ int main(int argc, char **argv)
     }
 
     /* no --text without --contents-output */
-    if (copy_opts->text > 0) {
+    if (copy_opts->text > 0 && copy_opts->contents_output == NULL) {
         if (rank == 0) {
             MFU_LOG(MFU_LOG_ERR, "Option --text is valid only when --contents-output is used.");
         }
