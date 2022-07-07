@@ -732,11 +732,6 @@ static void dsync_strmap_compare_data_link_dest(
         /* count bytes from regular files */
         mfu_filetype type = mfu_flist_file_get_type(src_compare_list, idx);
         if (type == MFU_TYPE_FILE) {
-		/* OLAF mfu_flist_file_get_size() might have returned -1
-		 * if stat information wasn't present, in which case bytes
-		 * is now wrong in a non-obvious way (as opposed to simply
-		 * not reflecting those files at all, for example).
-		 */
             bytes += mfu_flist_file_get_size(src_compare_list, idx);
         }
     }
