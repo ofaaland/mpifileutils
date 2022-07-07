@@ -968,7 +968,6 @@ static int dsync_strmap_compare_data(
     for (i = 0; i < size; i++) {
         /* lookup name of file based on id to send to strmap updata call */
         const char* name = mfu_flist_file_get_name(src_compare_list, i);
-	const char* src_name = name;
 
         /* ignore prefix portion of path to use as key */
         name += strlen_prefix;
