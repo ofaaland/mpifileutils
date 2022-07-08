@@ -167,31 +167,41 @@ struct dcmp_disjunction {
 
 struct dcmp_output {
     char* file_name;               /* output file name */
-    struct list_head linkage;      /* linkage to struct dcmp_options */
+    struct list_head linkage;      /* linkage to struct mfu_cmp_options */
     struct dcmp_disjunction *disjunction; /* logical disjunction rules */
 };
 
 struct dcmp_options {
-    struct list_head outputs;      /* list of outputs */
     int verbose;
     int quiet;
     int lite;
     int format;                    /* output data format, 0 for text, 1 for raw */
     int base;                      /* whether to do base check */
     int debug;                     /* check result after get result */
+};
+
+struct mfu_cmp_options {
+    struct list_head outputs;      /* list of outputs */
+};
+
+struct mfu_need_compare {
     int need_compare[DCMPF_MAX];   /* fields that need to be compared  */
 };
 
 struct dcmp_options options = {
-    .outputs      = LIST_HEAD_INIT(options.outputs),
     .verbose      = 0,
     .quiet        = 0,
     .lite         = 0,
     .format       = 1,
     .base         = 0,
     .debug        = 0,
-    .need_compare = {0,}
 };
+
+struct mfu_cmp_options dcmp_outputs = {
+    .outputs      = LIST_HEAD_INIT(dcmp_outputs.outputs),
+};
+
+struct mfu_need_compare dcmp_need_compare = {0};
 
 /* From tail to head */
 const char *dcmp_default_outputs[] = {
@@ -561,9 +571,10 @@ out:
     }
 }
 
-static int dcmp_option_need_compare(dcmp_field field)
+static int dcmp_option_need_compare(struct mfu_need_compare *compare_flags,
+    dcmp_field field)
 {
-    return options.need_compare[field];
+    return compare_flags->need_compare[field];
 }
 
 /* Return -1 when error, return 0 when equal, return > 0 when diff */
@@ -574,11 +585,12 @@ static int dcmp_compare_metadata(
     mfu_flist dst_list,
     strmap* dst_map,
     uint64_t dst_index,
-    const char* key)
+    const char* key,
+    struct mfu_need_compare *compare_flags)
 {
     int diff = 0;
 
-    if (dcmp_option_need_compare(DCMPF_SIZE)) {
+    if (dcmp_option_need_compare(compare_flags, DCMPF_SIZE)) {
         mfu_filetype type = mfu_flist_file_get_type(src_list, src_index);
         if (type != MFU_TYPE_DIR) {
             uint64_t src = mfu_flist_file_get_size(src_list, src_index);
@@ -597,7 +609,7 @@ static int dcmp_compare_metadata(
             dcmp_strmap_item_update(dst_map, key, DCMPF_SIZE, DCMPS_COMMON);
         }
     }
-    if (dcmp_option_need_compare(DCMPF_GID)) {
+    if (dcmp_option_need_compare(compare_flags, DCMPF_GID)) {
         uint64_t src = mfu_flist_file_get_gid(src_list, src_index);
         uint64_t dst = mfu_flist_file_get_gid(dst_list, dst_index);
         if (src != dst) {
@@ -610,7 +622,7 @@ static int dcmp_compare_metadata(
             dcmp_strmap_item_update(dst_map, key, DCMPF_GID, DCMPS_COMMON);
         }
     }
-    if (dcmp_option_need_compare(DCMPF_UID)) {
+    if (dcmp_option_need_compare(compare_flags, DCMPF_UID)) {
         uint64_t src = mfu_flist_file_get_uid(src_list, src_index);
         uint64_t dst = mfu_flist_file_get_uid(dst_list, dst_index);
         if (src != dst) {
@@ -623,7 +635,7 @@ static int dcmp_compare_metadata(
             dcmp_strmap_item_update(dst_map, key, DCMPF_UID, DCMPS_COMMON);
         }
     }
-    if (dcmp_option_need_compare(DCMPF_ATIME)) {
+    if (dcmp_option_need_compare(compare_flags, DCMPF_ATIME)) {
         uint64_t src_atime      = mfu_flist_file_get_atime(src_list, src_index);
         uint64_t src_atime_nsec = mfu_flist_file_get_atime_nsec(src_list, src_index);
         uint64_t dst_atime      = mfu_flist_file_get_atime(dst_list, dst_index);
@@ -638,7 +650,7 @@ static int dcmp_compare_metadata(
             dcmp_strmap_item_update(dst_map, key, DCMPF_ATIME, DCMPS_COMMON);
         }
     }
-    if (dcmp_option_need_compare(DCMPF_MTIME)) {
+    if (dcmp_option_need_compare(compare_flags, DCMPF_MTIME)) {
         uint64_t src_mtime      = mfu_flist_file_get_mtime(src_list, src_index);
         uint64_t src_mtime_nsec = mfu_flist_file_get_mtime_nsec(src_list, src_index);
         uint64_t dst_mtime      = mfu_flist_file_get_mtime(dst_list, dst_index);
@@ -653,7 +665,7 @@ static int dcmp_compare_metadata(
             dcmp_strmap_item_update(dst_map, key, DCMPF_MTIME, DCMPS_COMMON);
         }
     }
-    if (dcmp_option_need_compare(DCMPF_CTIME)) {
+    if (dcmp_option_need_compare(compare_flags, DCMPF_CTIME)) {
         uint64_t src_ctime      = mfu_flist_file_get_ctime(src_list, src_index);
         uint64_t src_ctime_nsec = mfu_flist_file_get_ctime_nsec(src_list, src_index);
         uint64_t dst_ctime      = mfu_flist_file_get_ctime(dst_list, dst_index);
@@ -668,7 +680,7 @@ static int dcmp_compare_metadata(
             dcmp_strmap_item_update(dst_map, key, DCMPF_CTIME, DCMPS_COMMON);
         }
     }
-    if (dcmp_option_need_compare(DCMPF_PERM)) {
+    if (dcmp_option_need_compare(compare_flags, DCMPF_PERM)) {
         uint64_t src = mfu_flist_file_get_perm(src_list, src_index);
         uint64_t dst = mfu_flist_file_get_perm(dst_list, dst_index);
         if (src != dst) {
@@ -681,7 +693,7 @@ static int dcmp_compare_metadata(
             dcmp_strmap_item_update(dst_map, key, DCMPF_PERM, DCMPS_COMMON);
         }
     }
-    if (dcmp_option_need_compare(DCMPF_ACL)) {
+    if (dcmp_option_need_compare(compare_flags, DCMPF_ACL)) {
         dcmp_compare_acl(key, src_list,src_index,
                          dst_list, dst_index,
                          src_map, dst_map, &diff);
@@ -977,7 +989,9 @@ static int dcmp_strmap_compare(
     const mfu_param_path* src_path,
     const mfu_param_path* dest_path,
     mfu_file_t* mfu_src_file,
-    mfu_file_t* mfu_dst_file)
+    mfu_file_t* mfu_dst_file,
+    int lite_comparison,
+    struct mfu_need_compare *compare_flags)
 {
     /* assume we'll succeed */
     int rc = 0;
@@ -1047,11 +1061,11 @@ static int dcmp_strmap_compare(
 
         tmp_rc = dcmp_compare_metadata(src_list, src_map, src_index,
              dst_list, dst_map, dst_index,
-             key);
+             key, compare_flags);
 
         assert(tmp_rc >= 0);
 
-        if (!dcmp_option_need_compare(DCMPF_TYPE)) {
+        if (!dcmp_option_need_compare(compare_flags, DCMPF_TYPE)) {
             /*
              * Skip if no need to compare type.
              * All the following comparison depends on type.
@@ -1065,7 +1079,7 @@ static int dcmp_strmap_compare(
             dcmp_strmap_item_update(src_map, key, DCMPF_TYPE, DCMPS_DIFFER);
             dcmp_strmap_item_update(dst_map, key, DCMPF_TYPE, DCMPS_DIFFER);
 
-            if (!dcmp_option_need_compare(DCMPF_CONTENT)) {
+            if (!dcmp_option_need_compare(compare_flags, DCMPF_CONTENT)) {
                 continue;
             }
 
@@ -1078,7 +1092,7 @@ static int dcmp_strmap_compare(
         dcmp_strmap_item_update(src_map, key, DCMPF_TYPE, DCMPS_COMMON);
         dcmp_strmap_item_update(dst_map, key, DCMPF_TYPE, DCMPS_COMMON);
 
-        if (!dcmp_option_need_compare(DCMPF_CONTENT)) {
+        if (!dcmp_option_need_compare(compare_flags, DCMPF_CONTENT)) {
             /* Skip if no need to compare content. */
             continue;
         }
@@ -1102,7 +1116,7 @@ static int dcmp_strmap_compare(
             continue;
         }
 
-        if (options.lite) {
+        if (lite_comparison) {
             if ((src_mtime != dst_mtime) || (src_mtime_nsec != dst_mtime_nsec)) {
                 /* modification times are different, assume content is different.
                  * I don't think we can assume contents are different if the
@@ -1130,7 +1144,7 @@ static int dcmp_strmap_compare(
     mfu_flist_summarize(dst_compare_list);
 
     uint64_t cmp_global_size = 0;
-    if (!options.lite) {
+    if (!lite_comparison) {
         /* compare the contents of the files if we have anything in the compare list */
         cmp_global_size = mfu_flist_global_size(src_compare_list);
         if (cmp_global_size > 0) {
@@ -1168,9 +1182,10 @@ static int dcmp_strmap_compare(
 
 /* loop on the src map to check the results */
 static void dcmp_strmap_check_src(strmap* src_map,
-                                  strmap* dst_map)
+                                  strmap* dst_map,
+    struct mfu_need_compare *compare_flags)
 {
-    assert(dcmp_option_need_compare(DCMPF_EXIST));
+    assert(dcmp_option_need_compare(compare_flags, DCMPF_EXIST));
     /* iterate over each item in source map */
     const strmap_node* node;
     strmap_foreach(src_map, node) {
@@ -1239,7 +1254,7 @@ static void dcmp_strmap_check_src(strmap* src_map,
                 /* all stats of source and dest are the same */
                 assert(src_state == dst_state);
                 /* all states are either common, differ or skipped */
-                if (dcmp_option_need_compare(field)) {
+                if (dcmp_option_need_compare(compare_flags, field)) {
                     assert(src_state == DCMPS_COMMON || src_state == DCMPS_DIFFER);
                 } else {
                     // XXXX
@@ -1256,9 +1271,10 @@ static void dcmp_strmap_check_src(strmap* src_map,
 
 /* loop on the dest map to check the results */
 static void dcmp_strmap_check_dst(strmap* src_map,
-    strmap* dst_map)
+    strmap* dst_map,
+    struct mfu_need_compare *compare_flags)
 {
-    assert(dcmp_option_need_compare(DCMPF_EXIST));
+    assert(dcmp_option_need_compare(compare_flags, DCMPF_EXIST));
 
     /* iterate over each item in dest map */
     const strmap_node* node;
@@ -1343,7 +1359,7 @@ static void dcmp_strmap_check_dst(strmap* src_map,
                 /* all stats of source and dest are the same */
                 assert(src_state == dst_state);
                 /* all states are either common, differ or skipped */
-                if (dcmp_option_need_compare(field)) {
+                if (dcmp_option_need_compare(compare_flags, field)) {
                     assert(src_state == DCMPS_COMMON ||
                     src_state == DCMPS_DIFFER);
                 } else {
@@ -1357,10 +1373,11 @@ static void dcmp_strmap_check_dst(strmap* src_map,
 /* check the result maps are valid */
 static void dcmp_strmap_check(
     strmap* src_map,
-    strmap* dst_map)
+    strmap* dst_map,
+    struct mfu_need_compare *compare_flags)
 {
-    dcmp_strmap_check_src(src_map, dst_map);
-    dcmp_strmap_check_dst(src_map, dst_map);
+    dcmp_strmap_check_src(src_map, dst_map, compare_flags);
+    dcmp_strmap_check_dst(src_map, dst_map, compare_flags);
 }
 
 static int dcmp_map_fn(
@@ -1734,38 +1751,39 @@ static void dcmp_output_free(struct dcmp_output* output)
     mfu_free(&output);
 }
 
-static void dcmp_option_fini(void)
+static void dcmp_option_fini(struct list_head *outputs)
 {
     struct dcmp_output* output;
     struct dcmp_output* n;
 
     list_for_each_entry_safe(output,
                              n,
-                             &options.outputs,
+                             outputs,
                              linkage) {
         list_del_init(&output->linkage);
         dcmp_output_free(output);
     }
-    assert(list_empty(&options.outputs));
+    assert(list_empty(outputs));
 }
 
-static void dcmp_option_add_output(struct dcmp_output *output, int add_at_head)
+static void dcmp_option_add_output(struct dcmp_output *output, int add_at_head, struct list_head *outputs)
 {
     assert(list_empty(&output->linkage));
     if (add_at_head) {
-        list_add(&output->linkage, &options.outputs);
+        list_add(&output->linkage, outputs);
     } else {
-        list_add_tail(&output->linkage, &options.outputs);
+        list_add_tail(&output->linkage, outputs);
     }
 }
 
-static void dcmp_option_add_comparison(dcmp_field field)
+static void dcmp_option_add_comparison(dcmp_field field,
+    struct mfu_need_compare *compare_flags)
 {
     uint64_t depend = dcmp_field_depend[field];
     uint64_t i;
     for (i = 0; i < DCMPF_MAX; i++) {
         if ((depend & ((uint64_t)1 << i)) != (uint64_t)0) {
-            options.need_compare[i] = 1;
+            compare_flags->need_compare[i] = 1;
         }
     }
 }
@@ -1817,7 +1835,8 @@ static int dcmp_output_write(
     mfu_flist src_flist,
     strmap* src_map,
     mfu_flist dst_flist,
-    strmap* dst_map)
+    strmap* dst_map,
+    int output_cache)
 {
     int ret = 0;
     mfu_flist new_flist = mfu_flist_subset(src_flist);
@@ -1838,7 +1857,7 @@ static int dcmp_output_write(
     mfu_flist_summarize(src_matched);
     mfu_flist_summarize(dst_matched);
     if (output->file_name != NULL) {
-        if (options.format) {
+        if (output_cache) {
             mfu_flist_write_cache(output->file_name, new_flist);
         } else {
             mfu_flist_write_text(output->file_name, new_flist);
@@ -1874,15 +1893,17 @@ static int dcmp_outputs_write(
     mfu_flist src_list,
     strmap* src_map,
     mfu_flist dst_list,
-    strmap* dst_map)
+    strmap* dst_map,
+    int output_cache,
+    struct list_head *outputs)
 {
     struct dcmp_output* output;
     int ret = 0;
 
     list_for_each_entry(output,
-                        &options.outputs,
+                        outputs,
                         linkage) {
-        ret = dcmp_output_write(output, src_list, src_map, dst_list, dst_map);
+        ret = dcmp_output_write(output, src_list, src_map, dst_list, dst_map, output_cache);
         if (ret) {
             fprintf(stderr,
                 "failed to output to file \"%s\"\n",
@@ -1900,7 +1921,8 @@ static int dcmp_outputs_write(
 
 static int dcmp_expression_parse(
     struct dcmp_conjunction* conjunction,
-    const char* expression_string)
+    const char* expression_string,
+    struct mfu_need_compare *compare_flags)
 {
     char* tmp = MFU_STRDUP(expression_string);
     char* field_string;
@@ -1950,7 +1972,7 @@ static int dcmp_expression_parse(
     dcmp_conjunction_add_expression(conjunction, expression);
 
     /* Add comparison we need for this expression */
-    dcmp_option_add_comparison(expression->field);
+    dcmp_option_add_comparison(expression->field, compare_flags);
 out:
     if (ret) {
         dcmp_expression_free(expression);
@@ -1961,7 +1983,8 @@ out:
 
 static int dcmp_conjunction_parse(
     struct dcmp_disjunction* disjunction,
-    const char* conjunction_string)
+    const char* conjunction_string,
+    struct mfu_need_compare *compare_flags)
 {
     int ret = 0;
     char* tmp = MFU_STRDUP(conjunction_string);
@@ -1978,7 +2001,7 @@ static int dcmp_conjunction_parse(
             continue;
         }
 
-        ret = dcmp_expression_parse(conjunction, expression);
+        ret = dcmp_expression_parse(conjunction, expression, compare_flags);
         if (ret) {
             fprintf(stderr,
                 "failed to parse expression \"%s\"\n", expression);
@@ -1997,7 +2020,8 @@ out:
 
 static int dcmp_disjunction_parse(
     struct dcmp_output *output,
-    const char *disjunction_string)
+    const char *disjunction_string,
+    struct mfu_need_compare *compare_flags)
 {
     int ret = 0;
     char* tmp = MFU_STRDUP(disjunction_string);
@@ -2014,7 +2038,7 @@ static int dcmp_disjunction_parse(
             continue;
         }
 
-        ret = dcmp_conjunction_parse(disjunction, conjunction);
+        ret = dcmp_conjunction_parse(disjunction, conjunction, compare_flags);
         if (ret) {
             fprintf(stderr,
                 "failed to parse conjunction \"%s\"\n", conjunction);
@@ -2031,7 +2055,8 @@ out:
     return ret;
 }
 
-static int dcmp_option_output_parse(const char *option, int add_at_head)
+static int dcmp_option_output_parse(const char *option, int add_at_head,
+    struct list_head *outputs, struct mfu_need_compare *compare_flags)
 {
     char* tmp = MFU_STRDUP(option);
     char* disjunction;
@@ -2051,7 +2076,7 @@ static int dcmp_option_output_parse(const char *option, int add_at_head)
         goto out;
     }
 
-    ret = dcmp_disjunction_parse(output, disjunction);
+    ret = dcmp_disjunction_parse(output, disjunction, compare_flags);
     if (ret) {
         goto out;
     }
@@ -2059,7 +2084,7 @@ static int dcmp_option_output_parse(const char *option, int add_at_head)
     if (file_name != NULL && *file_name) {
         output->file_name = MFU_STRDUP(file_name);
     }
-    dcmp_option_add_output(output, add_at_head);
+    dcmp_option_add_output(output, add_at_head, outputs);
 out:
     if (ret) {
         dcmp_output_free(output);
@@ -2148,7 +2173,7 @@ int main(int argc, char **argv)
 
         switch (c) {
         case 'o':
-            ret = dcmp_option_output_parse(optarg, 0);
+            ret = dcmp_option_output_parse(optarg, 0, &dcmp_outputs.outputs, &dcmp_need_compare);
             if (ret) {
                 usage = 1;
             }
@@ -2238,7 +2263,7 @@ int main(int argc, char **argv)
     }
 
     /* Generate default output */
-    if (options.base || list_empty(&options.outputs)) {
+    if (options.base || list_empty(&dcmp_outputs.outputs)) {
         /*
          * If -o option is not given,
          * we want to add default output,
@@ -2248,7 +2273,8 @@ int main(int argc, char **argv)
             if (dcmp_default_outputs[i] == NULL) {
                 break;
             }
-            ret = dcmp_option_output_parse(dcmp_default_outputs[i], 1);
+            ret = dcmp_option_output_parse(dcmp_default_outputs[i], 1,
+	        &dcmp_outputs.outputs, &dcmp_need_compare);
             assert(ret == 0);
         }
     }
@@ -2268,7 +2294,7 @@ int main(int argc, char **argv)
         if (rank == 0) {
             print_usage();
         }
-        dcmp_option_fini();
+        dcmp_option_fini(&dcmp_outputs.outputs);
         mfu_finalize();
         MPI_Finalize();
         return 1;
@@ -2347,7 +2373,7 @@ int main(int argc, char **argv)
 
     /* compare files in map1 with those in map2 */
     int tmp_rc = dcmp_strmap_compare(flist3, map1, flist4, map2, strlen(path1), copy_opts, srcpath, destpath,
-                                     mfu_src_file, mfu_dst_file);
+                                     mfu_src_file, mfu_dst_file, options.lite, &dcmp_need_compare);
     if (tmp_rc < 0) {
         /* hit a read error on at least one file */
         rc = 1;
@@ -2355,11 +2381,12 @@ int main(int argc, char **argv)
 
     /* check the results are valid */
     if (options.debug) {
-        dcmp_strmap_check(map1, map2);
+        dcmp_strmap_check(map1, map2, &dcmp_need_compare);
     }
 
     /* write data to cache files and print summary */
-    dcmp_outputs_write(flist3, map1, flist4, map2);
+    dcmp_outputs_write(flist3, map1, flist4, map2, options.format,
+        &dcmp_outputs.outputs);
 
     /* free maps of file names to comparison state info */
     strmap_delete(&map1);
@@ -2377,7 +2404,7 @@ int main(int argc, char **argv)
     /* free memory allocated to hold params */
     mfu_free(&paths);
 
-    dcmp_option_fini();
+    dcmp_option_fini(&dcmp_outputs.outputs);
 
     /* free the copy options structure */
     mfu_copy_opts_delete(&copy_opts);
