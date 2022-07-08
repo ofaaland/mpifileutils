@@ -168,28 +168,35 @@ struct dcmp_disjunction {
 struct dcmp_output {
     char* file_name;               /* output file name */
     struct list_head linkage;      /* linkage to struct dcmp_options */
+    struct list_head mco_link;     /* linkage to struct mfu_cmp_options */
     struct dcmp_disjunction *disjunction; /* logical disjunction rules */
 };
 
 struct dcmp_options {
-    struct list_head outputs;      /* list of outputs */
     int verbose;
     int quiet;
     int lite;
     int format;                    /* output data format, 0 for text, 1 for raw */
     int base;                      /* whether to do base check */
     int debug;                     /* check result after get result */
+};
+
+struct mfu_cmp_options {
+    struct list_head outputs;      /* list of outputs */
     int need_compare[DCMPF_MAX];   /* fields that need to be compared  */
 };
 
 struct dcmp_options options = {
-    .outputs      = LIST_HEAD_INIT(options.outputs),
     .verbose      = 0,
     .quiet        = 0,
     .lite         = 0,
     .format       = 1,
     .base         = 0,
     .debug        = 0,
+};
+
+struct mfu_cmp_options cmp_options = {
+    .outputs      = LIST_HEAD_INIT(cmp_options.outputs),
     .need_compare = {0,}
 };
 
@@ -563,7 +570,7 @@ out:
 
 static int dcmp_option_need_compare(dcmp_field field)
 {
-    return options.need_compare[field];
+    return cmp_options.need_compare[field];
 }
 
 /* Return -1 when error, return 0 when equal, return > 0 when diff */
@@ -1741,21 +1748,21 @@ static void dcmp_option_fini(void)
 
     list_for_each_entry_safe(output,
                              n,
-                             &options.outputs,
+                             &cmp_options.outputs,
                              linkage) {
         list_del_init(&output->linkage);
         dcmp_output_free(output);
     }
-    assert(list_empty(&options.outputs));
+    assert(list_empty(&cmp_options.outputs));
 }
 
 static void dcmp_option_add_output(struct dcmp_output *output, int add_at_head)
 {
     assert(list_empty(&output->linkage));
     if (add_at_head) {
-        list_add(&output->linkage, &options.outputs);
+        list_add(&output->linkage, &cmp_options.outputs);
     } else {
-        list_add_tail(&output->linkage, &options.outputs);
+        list_add_tail(&output->linkage, &cmp_options.outputs);
     }
 }
 
@@ -1765,7 +1772,7 @@ static void dcmp_option_add_comparison(dcmp_field field)
     uint64_t i;
     for (i = 0; i < DCMPF_MAX; i++) {
         if ((depend & ((uint64_t)1 << i)) != (uint64_t)0) {
-            options.need_compare[i] = 1;
+            cmp_options.need_compare[i] = 1;
         }
     }
 }
@@ -1880,7 +1887,7 @@ static int dcmp_outputs_write(
     int ret = 0;
 
     list_for_each_entry(output,
-                        &options.outputs,
+                        &cmp_options.outputs,
                         linkage) {
         ret = dcmp_output_write(output, src_list, src_map, dst_list, dst_map);
         if (ret) {
@@ -2238,7 +2245,7 @@ int main(int argc, char **argv)
     }
 
     /* Generate default output */
-    if (options.base || list_empty(&options.outputs)) {
+    if (options.base || list_empty(&cmp_options.outputs)) {
         /*
          * If -o option is not given,
          * we want to add default output,
