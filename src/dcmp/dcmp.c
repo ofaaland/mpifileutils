@@ -984,7 +984,8 @@ static int dcmp_strmap_compare(
     const mfu_param_path* src_path,
     const mfu_param_path* dest_path,
     mfu_file_t* mfu_src_file,
-    mfu_file_t* mfu_dst_file)
+    mfu_file_t* mfu_dst_file,
+    int lite_comparison)
 {
     /* assume we'll succeed */
     int rc = 0;
@@ -1109,7 +1110,7 @@ static int dcmp_strmap_compare(
             continue;
         }
 
-        if (options.lite) {
+        if (lite_comparison) {
             if ((src_mtime != dst_mtime) || (src_mtime_nsec != dst_mtime_nsec)) {
                 /* modification times are different, assume content is different.
                  * I don't think we can assume contents are different if the
@@ -1137,7 +1138,7 @@ static int dcmp_strmap_compare(
     mfu_flist_summarize(dst_compare_list);
 
     uint64_t cmp_global_size = 0;
-    if (!options.lite) {
+    if (!lite_comparison) {
         /* compare the contents of the files if we have anything in the compare list */
         cmp_global_size = mfu_flist_global_size(src_compare_list);
         if (cmp_global_size > 0) {
@@ -1824,7 +1825,8 @@ static int dcmp_output_write(
     mfu_flist src_flist,
     strmap* src_map,
     mfu_flist dst_flist,
-    strmap* dst_map)
+    strmap* dst_map,
+    int output_cache)
 {
     int ret = 0;
     mfu_flist new_flist = mfu_flist_subset(src_flist);
@@ -1845,7 +1847,7 @@ static int dcmp_output_write(
     mfu_flist_summarize(src_matched);
     mfu_flist_summarize(dst_matched);
     if (output->file_name != NULL) {
-        if (options.format) {
+        if (output_cache) {
             mfu_flist_write_cache(output->file_name, new_flist);
         } else {
             mfu_flist_write_text(output->file_name, new_flist);
@@ -1881,7 +1883,8 @@ static int dcmp_outputs_write(
     mfu_flist src_list,
     strmap* src_map,
     mfu_flist dst_list,
-    strmap* dst_map)
+    strmap* dst_map,
+    int output_cache)
 {
     struct dcmp_output* output;
     int ret = 0;
@@ -1889,7 +1892,7 @@ static int dcmp_outputs_write(
     list_for_each_entry(output,
                         &cmp_options.outputs,
                         linkage) {
-        ret = dcmp_output_write(output, src_list, src_map, dst_list, dst_map);
+        ret = dcmp_output_write(output, src_list, src_map, dst_list, dst_map, output_cache);
         if (ret) {
             fprintf(stderr,
                 "failed to output to file \"%s\"\n",
@@ -2354,7 +2357,7 @@ int main(int argc, char **argv)
 
     /* compare files in map1 with those in map2 */
     int tmp_rc = dcmp_strmap_compare(flist3, map1, flist4, map2, strlen(path1), copy_opts, srcpath, destpath,
-                                     mfu_src_file, mfu_dst_file);
+                                     mfu_src_file, mfu_dst_file, options.lite);
     if (tmp_rc < 0) {
         /* hit a read error on at least one file */
         rc = 1;
@@ -2366,7 +2369,7 @@ int main(int argc, char **argv)
     }
 
     /* write data to cache files and print summary */
-    dcmp_outputs_write(flist3, map1, flist4, map2);
+    dcmp_outputs_write(flist3, map1, flist4, map2, options.format);
 
     /* free maps of file names to comparison state info */
     strmap_delete(&map1);
