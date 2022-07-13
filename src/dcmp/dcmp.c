@@ -167,8 +167,7 @@ struct dcmp_disjunction {
 
 struct dcmp_output {
     char* file_name;               /* output file name */
-    struct list_head linkage;      /* linkage to struct dcmp_options */
-    struct list_head mco_link;     /* linkage to struct mfu_cmp_options */
+    struct list_head linkage;      /* linkage to struct mfu_cmp_options */
     struct dcmp_disjunction *disjunction; /* logical disjunction rules */
 };
 
