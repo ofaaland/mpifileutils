@@ -1742,28 +1742,28 @@ static void dcmp_output_free(struct dcmp_output* output)
     mfu_free(&output);
 }
 
-static void dcmp_option_fini(void)
+static void dcmp_option_fini(struct list_head *outputs)
 {
     struct dcmp_output* output;
     struct dcmp_output* n;
 
     list_for_each_entry_safe(output,
                              n,
-                             &cmp_options.outputs,
+                             outputs,
                              linkage) {
         list_del_init(&output->linkage);
         dcmp_output_free(output);
     }
-    assert(list_empty(&cmp_options.outputs));
+    assert(list_empty(outputs));
 }
 
-static void dcmp_option_add_output(struct dcmp_output *output, int add_at_head)
+static void dcmp_option_add_output(struct dcmp_output *output, int add_at_head, struct list_head *outputs)
 {
     assert(list_empty(&output->linkage));
     if (add_at_head) {
-        list_add(&output->linkage, &cmp_options.outputs);
+        list_add(&output->linkage, outputs);
     } else {
-        list_add_tail(&output->linkage, &cmp_options.outputs);
+        list_add_tail(&output->linkage, outputs);
     }
 }
 
@@ -1884,13 +1884,14 @@ static int dcmp_outputs_write(
     strmap* src_map,
     mfu_flist dst_list,
     strmap* dst_map,
-    int output_cache)
+    int output_cache,
+    struct list_head *outputs)
 {
     struct dcmp_output* output;
     int ret = 0;
 
     list_for_each_entry(output,
-                        &cmp_options.outputs,
+                        outputs,
                         linkage) {
         ret = dcmp_output_write(output, src_list, src_map, dst_list, dst_map, output_cache);
         if (ret) {
@@ -2041,7 +2042,8 @@ out:
     return ret;
 }
 
-static int dcmp_option_output_parse(const char *option, int add_at_head)
+static int dcmp_option_output_parse(const char *option, int add_at_head,
+    struct list_head *outputs)
 {
     char* tmp = MFU_STRDUP(option);
     char* disjunction;
@@ -2069,7 +2071,7 @@ static int dcmp_option_output_parse(const char *option, int add_at_head)
     if (file_name != NULL && *file_name) {
         output->file_name = MFU_STRDUP(file_name);
     }
-    dcmp_option_add_output(output, add_at_head);
+    dcmp_option_add_output(output, add_at_head, outputs);
 out:
     if (ret) {
         dcmp_output_free(output);
@@ -2158,7 +2160,7 @@ int main(int argc, char **argv)
 
         switch (c) {
         case 'o':
-            ret = dcmp_option_output_parse(optarg, 0);
+            ret = dcmp_option_output_parse(optarg, 0, &cmp_options.outputs);
             if (ret) {
                 usage = 1;
             }
@@ -2258,7 +2260,8 @@ int main(int argc, char **argv)
             if (dcmp_default_outputs[i] == NULL) {
                 break;
             }
-            ret = dcmp_option_output_parse(dcmp_default_outputs[i], 1);
+            ret = dcmp_option_output_parse(dcmp_default_outputs[i], 1,
+	        &cmp_options.outputs);
             assert(ret == 0);
         }
     }
@@ -2278,7 +2281,7 @@ int main(int argc, char **argv)
         if (rank == 0) {
             print_usage();
         }
-        dcmp_option_fini();
+        dcmp_option_fini(&cmp_options.outputs);
         mfu_finalize();
         MPI_Finalize();
         return 1;
@@ -2369,7 +2372,8 @@ int main(int argc, char **argv)
     }
 
     /* write data to cache files and print summary */
-    dcmp_outputs_write(flist3, map1, flist4, map2, options.format);
+    dcmp_outputs_write(flist3, map1, flist4, map2, options.format,
+        &cmp_options.outputs);
 
     /* free maps of file names to comparison state info */
     strmap_delete(&map1);
@@ -2387,7 +2391,7 @@ int main(int argc, char **argv)
     /* free memory allocated to hold params */
     mfu_free(&paths);
 
-    dcmp_option_fini();
+    dcmp_option_fini(&cmp_options.outputs);
 
     /* free the copy options structure */
     mfu_copy_opts_delete(&copy_opts);
