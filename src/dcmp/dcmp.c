@@ -197,8 +197,8 @@ struct dcmp_options options = {
     .debug        = 0,
 };
 
-struct mfu_cmp_options cmp_options = {
-    .outputs      = LIST_HEAD_INIT(cmp_options.outputs),
+struct mfu_cmp_options dcmp_outputs = {
+    .outputs      = LIST_HEAD_INIT(dcmp_outputs.outputs),
 };
 
 struct mfu_need_compare dcmp_need_compare = {0};
@@ -2173,7 +2173,7 @@ int main(int argc, char **argv)
 
         switch (c) {
         case 'o':
-            ret = dcmp_option_output_parse(optarg, 0, &cmp_options.outputs, &dcmp_need_compare);
+            ret = dcmp_option_output_parse(optarg, 0, &dcmp_outputs.outputs, &dcmp_need_compare);
             if (ret) {
                 usage = 1;
             }
@@ -2263,7 +2263,7 @@ int main(int argc, char **argv)
     }
 
     /* Generate default output */
-    if (options.base || list_empty(&cmp_options.outputs)) {
+    if (options.base || list_empty(&dcmp_outputs.outputs)) {
         /*
          * If -o option is not given,
          * we want to add default output,
@@ -2274,7 +2274,7 @@ int main(int argc, char **argv)
                 break;
             }
             ret = dcmp_option_output_parse(dcmp_default_outputs[i], 1,
-	        &cmp_options.outputs, &dcmp_need_compare);
+	        &dcmp_outputs.outputs, &dcmp_need_compare);
             assert(ret == 0);
         }
     }
@@ -2294,7 +2294,7 @@ int main(int argc, char **argv)
         if (rank == 0) {
             print_usage();
         }
-        dcmp_option_fini(&cmp_options.outputs);
+        dcmp_option_fini(&dcmp_outputs.outputs);
         mfu_finalize();
         MPI_Finalize();
         return 1;
@@ -2386,7 +2386,7 @@ int main(int argc, char **argv)
 
     /* write data to cache files and print summary */
     dcmp_outputs_write(flist3, map1, flist4, map2, options.format,
-        &cmp_options.outputs);
+        &dcmp_outputs.outputs);
 
     /* free maps of file names to comparison state info */
     strmap_delete(&map1);
@@ -2404,7 +2404,7 @@ int main(int argc, char **argv)
     /* free memory allocated to hold params */
     mfu_free(&paths);
 
-    dcmp_option_fini(&cmp_options.outputs);
+    dcmp_option_fini(&dcmp_outputs.outputs);
 
     /* free the copy options structure */
     mfu_copy_opts_delete(&copy_opts);
