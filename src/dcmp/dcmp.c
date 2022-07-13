@@ -183,8 +183,9 @@ struct dcmp_options {
 
 struct mfu_cmp_options {
     struct list_head outputs;      /* list of outputs */
-    int need_compare[DCMPF_MAX];   /* fields that need to be compared  */
 };
+
+int need_compare[DCMPF_MAX] = {0,};   /* fields that need to be compared  */
 
 struct dcmp_options options = {
     .verbose      = 0,
@@ -197,7 +198,6 @@ struct dcmp_options options = {
 
 struct mfu_cmp_options cmp_options = {
     .outputs      = LIST_HEAD_INIT(cmp_options.outputs),
-    .need_compare = {0,}
 };
 
 /* From tail to head */
@@ -570,7 +570,7 @@ out:
 
 static int dcmp_option_need_compare(dcmp_field field)
 {
-    return cmp_options.need_compare[field];
+    return need_compare[field];
 }
 
 /* Return -1 when error, return 0 when equal, return > 0 when diff */
@@ -1773,7 +1773,7 @@ static void dcmp_option_add_comparison(dcmp_field field)
     uint64_t i;
     for (i = 0; i < DCMPF_MAX; i++) {
         if ((depend & ((uint64_t)1 << i)) != (uint64_t)0) {
-            cmp_options.need_compare[i] = 1;
+            need_compare[i] = 1;
         }
     }
 }
