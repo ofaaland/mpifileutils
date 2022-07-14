@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <assert.h>
 
+#include "mfu_output.h"
 #include "mfu.h"
 #include "strmap.h"
 #include "list.h"
@@ -112,35 +113,6 @@ const char *dcmp_default_outputs[] = {
     "EXIST=COMMON",
     NULL,
 };
-
-/* use Allreduce to get the total number of bytes read if
- * data was compared */
-static uint64_t get_total_bytes_read(mfu_flist src_compare_list) {
-
-    /* get counter for flist id & byte_count */
-    uint64_t idx;
-    uint64_t byte_count = 0;
-
-    /* get size of flist */
-    uint64_t size = mfu_flist_size(src_compare_list);
-
-    /* count up the number of bytes in src list
-     * multiply by two in order to include number
-     * of bytes read in dst list as well */
-    for (idx = 0; idx < size; idx++) {
-        byte_count += mfu_flist_file_get_size(src_compare_list, idx) * 2;
-    }
-
-    /* buffer for total byte count for Allreduce */
-    uint64_t total_bytes_read;
-
-    /* get total number of bytes across all processes */
-    MPI_Allreduce(&byte_count, &total_bytes_read, 1, MPI_UINT64_T, MPI_SUM, MPI_COMM_WORLD);
-
-    /* return the toal number of bytes */
-    return total_bytes_read;
-}
-
 /* variable to hold total bytes to be compared for computing progress and estimated time remaining */
 static uint64_t compare_total_count;
 
@@ -333,60 +305,26 @@ static int dcmp_strmap_compare_data(
     return rc;
 }
 
-static void time_strmap_compare(mfu_flist src_list, double start_compare,
-                                double end_compare, time_t *time_started,
-                                time_t *time_ended, uint64_t total_bytes_read) {
+static int dcmp_map_fn(
+    mfu_flist flist,
+    uint64_t idx,
+    int ranks,
+    void *args)
+{
+    /* the args pointer is a pointer to the directory prefix to
+     * be ignored in full path name */
+    char* prefix = (char *)args;
+    size_t prefix_len = strlen(prefix);
 
-    /* if the verbose option is set print the timing data
-        report compare count, time, and rate */
-    if (mfu_debug_level >= MFU_LOG_VERBOSE && mfu_rank == 0) {
-       /* find out how many files were compared */
-       uint64_t all_count = mfu_flist_global_size(src_list);
+    /* get name of item */
+    const char* name = mfu_flist_file_get_name(flist, idx);
 
-       /* get the amount of time the compare function took */
-       double time_diff = end_compare - start_compare;
-
-       /* calculate byte and file rate */
-       double file_rate = 0.0;
-       double byte_rate = 0.0;
-       if (time_diff > 0.0) {
-           file_rate = ((double)all_count) / time_diff;
-           byte_rate = ((double)total_bytes_read) / time_diff;
-       }
-
-       /* convert uint64 to strings for printing to user */
-       char starttime_str[256];
-       char endtime_str[256];
-
-       struct tm* localstart = localtime(time_started);
-       struct tm cp_localstart = *localstart;
-       struct tm* localend = localtime(time_ended);
-       struct tm cp_localend = *localend;
-
-       strftime(starttime_str, 256, "%b-%d-%Y, %H:%M:%S", &cp_localstart);
-       strftime(endtime_str, 256, "%b-%d-%Y, %H:%M:%S", &cp_localend);
-
-       /* convert size to units */
-       double size_tmp;
-       const char* size_units;
-       mfu_format_bytes(total_bytes_read, &size_tmp, &size_units);
-
-       /* convert bandwidth to units */
-       double total_bytes_tmp;
-       const char* rate_units;
-       mfu_format_bw(byte_rate, &total_bytes_tmp, &rate_units);
-
-       MFU_LOG(MFU_LOG_INFO, "Started   : %s", starttime_str);
-       MFU_LOG(MFU_LOG_INFO, "Completed : %s", endtime_str);
-       MFU_LOG(MFU_LOG_INFO, "Seconds   : %.3lf", time_diff);
-       MFU_LOG(MFU_LOG_INFO, "Items     : %" PRId64, all_count);
-       MFU_LOG(MFU_LOG_INFO, "Item Rate : %lu items in %f seconds (%f items/sec)",
-            all_count, time_diff, file_rate);
-       MFU_LOG(MFU_LOG_INFO, "Bytes read: %.3lf %s (%" PRId64 " bytes)",
-            size_tmp, size_units, total_bytes_read);
-       MFU_LOG(MFU_LOG_INFO, "Byte Rate : %.3lf %s (%.3" PRId64 " bytes in %.3lf seconds)",
-            total_bytes_tmp, rate_units, total_bytes_read, time_diff);
-    }
+    /* identify a rank responsible for this item */
+    const char* ptr = name + prefix_len;
+    size_t ptr_len = strlen(ptr);
+    uint32_t hash = mfu_hash_jenkins(ptr, ptr_len);
+    int rank = (int) (hash % (uint32_t)ranks);
+    return rank;
 }
 
 int main(int argc, char **argv)
@@ -669,7 +607,8 @@ int main(int argc, char **argv)
 
     /* compare files in map1 with those in map2 */
     int tmp_rc = dcmp_strmap_compare(flist3, map1, flist4, map2, strlen(path1), copy_opts, srcpath, destpath,
-                                     mfu_src_file, mfu_dst_file, options.lite, &dcmp_need_compare);
+                                     mfu_src_file, mfu_dst_file, options.lite, &dcmp_need_compare,
+				     dcmp_strmap_compare_data);
     if (tmp_rc < 0) {
         /* hit a read error on at least one file */
         rc = 1;

@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <assert.h>
 
+#include "mfu_output.h"
 #include "mfu.h"
 #include "strmap.h"
 #include "list.h"
@@ -24,60 +25,6 @@
 #ifdef DAOS_SUPPORT
 #include "mfu_daos.h"
 #endif
-
-typedef enum _dcmp_state {
-    /* initial state */
-    DCMPS_INIT = 'A',
-
-    /* have common data/metadata */
-    DCMPS_COMMON,
-
-    /* have common data/metadata, not valid for DCMPF_EXIST */
-    DCMPS_DIFFER,
-
-     /*
-      * This file only exist in src directory.
-      * Only valid for DCMPF_EXIST.
-      */
-    DCMPS_ONLY_SRC,
-
-     /*
-      * This file only exist in dest directory.
-      * Only valid for DCMPF_EXIST.
-      * Not used yet,
-      * because we don't want to waste a loop in dcmp_strmap_compare()
-      */
-    DCMPS_ONLY_DEST,
-
-    DCMPS_MAX,
-} dcmp_state;
-
-typedef enum _dcmp_field {
-    DCMPF_EXIST = 0, /* both have this file */
-    DCMPF_TYPE,      /* both are the same type */
-    DCMPF_SIZE,      /* both are regular file and have same size */
-    DCMPF_UID,       /* both have the same UID */
-    DCMPF_GID,       /* both have the same GID */
-    DCMPF_ATIME,     /* both have the same atime */
-    DCMPF_MTIME,     /* both have the same mtime */
-    DCMPF_CTIME,     /* both have the same ctime */
-    DCMPF_PERM,      /* both have the same permission */
-    DCMPF_ACL,       /* both have the same ACLs */
-    DCMPF_CONTENT,   /* both have the same data */
-    DCMPF_MAX,
-} dcmp_field;
-
-#define DCMPF_EXIST_DEPEND   (1 << DCMPF_EXIST)
-#define DCMPF_TYPE_DEPEND    (DCMPF_EXIST_DEPEND | (1 << DCMPF_TYPE))
-#define DCMPF_SIZE_DEPEND    (DCMPF_TYPE_DEPEND | (1 << DCMPF_SIZE))
-#define DCMPF_UID_DEPEND     (DCMPF_EXIST_DEPEND | (1 << DCMPF_UID))
-#define DCMPF_GID_DEPEND     (DCMPF_EXIST_DEPEND | (1 << DCMPF_GID))
-#define DCMPF_ATIME_DEPEND   (DCMPF_EXIST_DEPEND | (1 << DCMPF_ATIME))
-#define DCMPF_MTIME_DEPEND   (DCMPF_EXIST_DEPEND | (1 << DCMPF_MTIME))
-#define DCMPF_CTIME_DEPEND   (DCMPF_EXIST_DEPEND | (1 << DCMPF_CTIME))
-#define DCMPF_PERM_DEPEND    (DCMPF_EXIST_DEPEND | (1 << DCMPF_PERM))
-#define DCMPF_ACL_DEPEND     (DCMPF_EXIST_DEPEND | (1 << DCMPF_ACL))
-#define DCMPF_CONTENT_DEPEND (DCMPF_SIZE_DEPEND | (1 << DCMPF_CONTENT))
 
 uint64_t dcmp_field_depend[] = {
     [DCMPF_EXIST]   = DCMPF_EXIST_DEPEND,
@@ -91,39 +38,6 @@ uint64_t dcmp_field_depend[] = {
     [DCMPF_PERM]    = DCMPF_PERM_DEPEND,
     [DCMPF_ACL]     = DCMPF_ACL_DEPEND,
     [DCMPF_CONTENT] = DCMPF_CONTENT_DEPEND,
-};
-
-struct dcmp_expression {
-    dcmp_field field;              /* the concerned field */
-    dcmp_state state;              /* expected state of the field */
-    struct list_head linkage;      /* linkage to struct dcmp_conjunction */
-};
-
-struct dcmp_conjunction {
-    struct list_head linkage;      /* linkage to struct dcmp_disjunction */
-    struct list_head expressions;  /* list of logical conjunction */
-    mfu_flist src_matched_list;    /* matched src items in this conjunction */
-    mfu_flist dst_matched_list;    /* matched dst items in this conjunction */
-};
-
-struct dcmp_disjunction {
-    struct list_head linkage;      /* linkage to struct dcmp_output */
-    struct list_head conjunctions; /* list of logical conjunction */
-    unsigned count;                /* logical conjunctions count */
-};
-
-struct dcmp_output {
-    char* file_name;               /* output file name */
-    struct list_head linkage;      /* linkage to struct mfu_cmp_options */
-    struct dcmp_disjunction *disjunction; /* logical disjunction rules */
-};
-
-struct mfu_cmp_options {
-    struct list_head outputs;      /* list of outputs */
-};
-
-struct mfu_need_compare {
-    int need_compare[DCMPF_MAX];   /* fields that need to be compared  */
 };
 
 static const char* dcmp_field_to_string(dcmp_field field, int simple)
@@ -313,7 +227,7 @@ static void dcmp_strmap_item_init(
     strmap_set(map, key, val);
 }
 
-static void dcmp_strmap_item_update(
+void dcmp_strmap_item_update(
     strmap* map,
     const char *key,
     dcmp_field field,
@@ -384,7 +298,7 @@ static int dcmp_strmap_item_state(
 
 /* map each file name to its index in the file list and initialize
  * its state for comparison operation */
-static strmap* dcmp_strmap_creat(mfu_flist list, const char* prefix)
+strmap* dcmp_strmap_creat(mfu_flist list, const char* prefix)
 {
     /* create a new string map to map a file name to a string
      * encoding its index and state */
@@ -614,8 +528,92 @@ static int dcmp_compare_metadata(
     return diff;
 }
 
+/* use Allreduce to get the total number of bytes read if
+ * data was compared */
+static uint64_t get_total_bytes_read(mfu_flist src_compare_list) {
+
+    /* get counter for flist id & byte_count */
+    uint64_t idx;
+    uint64_t byte_count = 0;
+
+    /* get size of flist */
+    uint64_t size = mfu_flist_size(src_compare_list);
+
+    /* count up the number of bytes in src list
+     * multiply by two in order to include number
+     * of bytes read in dst list as well */
+    for (idx = 0; idx < size; idx++) {
+        byte_count += mfu_flist_file_get_size(src_compare_list, idx) * 2;
+    }
+
+    /* buffer for total byte count for Allreduce */
+    uint64_t total_bytes_read;
+
+    /* get total number of bytes across all processes */
+    MPI_Allreduce(&byte_count, &total_bytes_read, 1, MPI_UINT64_T, MPI_SUM, MPI_COMM_WORLD);
+
+    /* return the toal number of bytes */
+    return total_bytes_read;
+}
+
+static void time_strmap_compare(mfu_flist src_list, double start_compare,
+                                double end_compare, time_t *time_started,
+                                time_t *time_ended, uint64_t total_bytes_read) {
+
+    /* if the verbose option is set print the timing data
+        report compare count, time, and rate */
+    if (mfu_debug_level >= MFU_LOG_VERBOSE && mfu_rank == 0) {
+       /* find out how many files were compared */
+       uint64_t all_count = mfu_flist_global_size(src_list);
+
+       /* get the amount of time the compare function took */
+       double time_diff = end_compare - start_compare;
+
+       /* calculate byte and file rate */
+       double file_rate = 0.0;
+       double byte_rate = 0.0;
+       if (time_diff > 0.0) {
+           file_rate = ((double)all_count) / time_diff;
+           byte_rate = ((double)total_bytes_read) / time_diff;
+       }
+
+       /* convert uint64 to strings for printing to user */
+       char starttime_str[256];
+       char endtime_str[256];
+
+       struct tm* localstart = localtime(time_started);
+       struct tm cp_localstart = *localstart;
+       struct tm* localend = localtime(time_ended);
+       struct tm cp_localend = *localend;
+
+       strftime(starttime_str, 256, "%b-%d-%Y, %H:%M:%S", &cp_localstart);
+       strftime(endtime_str, 256, "%b-%d-%Y, %H:%M:%S", &cp_localend);
+
+       /* convert size to units */
+       double size_tmp;
+       const char* size_units;
+       mfu_format_bytes(total_bytes_read, &size_tmp, &size_units);
+
+       /* convert bandwidth to units */
+       double total_bytes_tmp;
+       const char* rate_units;
+       mfu_format_bw(byte_rate, &total_bytes_tmp, &rate_units);
+
+       MFU_LOG(MFU_LOG_INFO, "Started   : %s", starttime_str);
+       MFU_LOG(MFU_LOG_INFO, "Completed : %s", endtime_str);
+       MFU_LOG(MFU_LOG_INFO, "Seconds   : %.3lf", time_diff);
+       MFU_LOG(MFU_LOG_INFO, "Items     : %" PRId64, all_count);
+       MFU_LOG(MFU_LOG_INFO, "Item Rate : %lu items in %f seconds (%f items/sec)",
+            all_count, time_diff, file_rate);
+       MFU_LOG(MFU_LOG_INFO, "Bytes read: %.3lf %s (%" PRId64 " bytes)",
+            size_tmp, size_units, total_bytes_read);
+       MFU_LOG(MFU_LOG_INFO, "Byte Rate : %.3lf %s (%.3" PRId64 " bytes in %.3lf seconds)",
+            total_bytes_tmp, rate_units, total_bytes_read, time_diff);
+    }
+}
+
 /* compare entries from src into dst */
-static int dcmp_strmap_compare(
+int dcmp_strmap_compare(
     mfu_flist src_list,
     strmap* src_map,
     mfu_flist dst_list,
@@ -627,7 +625,8 @@ static int dcmp_strmap_compare(
     mfu_file_t* mfu_src_file,
     mfu_file_t* mfu_dst_file,
     int lite_comparison,
-    struct mfu_need_compare *compare_flags)
+    struct mfu_need_compare *compare_flags,
+    dcmp_compare_t comparer)
 {
     /* assume we'll succeed */
     int rc = 0;
@@ -784,7 +783,7 @@ static int dcmp_strmap_compare(
         /* compare the contents of the files if we have anything in the compare list */
         cmp_global_size = mfu_flist_global_size(src_compare_list);
         if (cmp_global_size > 0) {
-            tmp_rc = dcmp_strmap_compare_data(src_compare_list, src_map, dst_compare_list,
+            tmp_rc = comparer(src_compare_list, src_map, dst_compare_list,
                     dst_map, strlen_prefix, copy_opts, mfu_src_file, mfu_dst_file);
             if (tmp_rc < 0) {
                 /* got a read error, signal that back to caller */
@@ -1007,35 +1006,13 @@ static void dcmp_strmap_check_dst(strmap* src_map,
 }
 
 /* check the result maps are valid */
-static void dcmp_strmap_check(
+void dcmp_strmap_check(
     strmap* src_map,
     strmap* dst_map,
     struct mfu_need_compare *compare_flags)
 {
     dcmp_strmap_check_src(src_map, dst_map, compare_flags);
     dcmp_strmap_check_dst(src_map, dst_map, compare_flags);
-}
-
-static int dcmp_map_fn(
-    mfu_flist flist,
-    uint64_t idx,
-    int ranks,
-    void *args)
-{
-    /* the args pointer is a pointer to the directory prefix to
-     * be ignored in full path name */
-    char* prefix = (char *)args;
-    size_t prefix_len = strlen(prefix);
-
-    /* get name of item */
-    const char* name = mfu_flist_file_get_name(flist, idx);
-
-    /* identify a rank responsible for this item */
-    const char* ptr = name + prefix_len;
-    size_t ptr_len = strlen(ptr);
-    uint32_t hash = mfu_hash_jenkins(ptr, ptr_len);
-    int rank = (int) (hash % (uint32_t)ranks);
-    return rank;
 }
 
 static struct dcmp_expression* dcmp_expression_alloc(void)
@@ -1387,7 +1364,7 @@ static void dcmp_output_free(struct dcmp_output* output)
     mfu_free(&output);
 }
 
-static void dcmp_option_fini(struct list_head *outputs)
+void dcmp_option_fini(struct list_head *outputs)
 {
     struct dcmp_output* output;
     struct dcmp_output* n;
@@ -1525,7 +1502,7 @@ static int dcmp_output_write(
     return 0;
 }
 
-static int dcmp_outputs_write(
+int dcmp_outputs_write(
     mfu_flist src_list,
     strmap* src_map,
     mfu_flist dst_list,
@@ -1691,7 +1668,7 @@ out:
     return ret;
 }
 
-static int dcmp_option_output_parse(const char *option, int add_at_head,
+int dcmp_option_output_parse(const char *option, int add_at_head,
     struct list_head *outputs, struct mfu_need_compare *compare_flags)
 {
     char* tmp = MFU_STRDUP(option);
@@ -1728,3 +1705,4 @@ out:
     mfu_free(&tmp);
     return ret;
 }
+
