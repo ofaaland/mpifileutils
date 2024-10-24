@@ -2,12 +2,12 @@
 import subprocess
 
 # change paths here for bash script as necessary
-mpifu_path     = "~/mpifileutils/test/tests/test_dsync/test_xattr.sh"
+mpifu_path     = "/g/g0/faaland1/projects/mpifileutils/test/tests/test_dsync/test_xattr.sh"
 
 # vars in bash script
-dsync_test_bin   = "/root/mpifileutils/install/bin/dsync"
-dsync_src_dir    = "/mnt/lustre"
-dsync_dest_dir   = "/mnt/lustre2"
+dsync_test_bin   = "/g/g0/faaland1/projects/mfu-install/bin/dsync"
+dsync_src_dir    = "/p/lflood/faaland1/scratch/mfutest/src"
+dsync_dest_dir    = "/p/lflood/faaland1/scratch/mfutest/dest"
 dsync_test_file  = "file_test_xattr_XXX"
 
 def test_xattr():
