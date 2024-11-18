@@ -783,6 +783,10 @@ static void dsync_strmap_compare_data_link_dest(
         int compare_rc = mfu_compare_contents(src_p->name, dst_p->name, offset, length, filesize,
                 overwrite, copy_opts, count_bytes_read, count_bytes_written, compare_prog,
                 mfu_src_file, mfu_dst_file);
+
+        if (compare_rc > 0 && options.verbose > 1)
+            MFU_LOG(MFU_LOG_INFO, "Path %s file contents differ", src_p->name);
+
         if (compare_rc == -1) {
             /* we hit an error while reading */
             rc = -1;
