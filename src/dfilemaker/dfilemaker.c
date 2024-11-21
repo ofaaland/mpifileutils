@@ -618,7 +618,7 @@ int main(int narg, char** arg)
     int* lind; // list of ints in order to resort things
     int initsum, noff;
 
-    int kft=0,ifac=0; // kft is index of filltype
+    int kft=0; // kft is index of filltype
     unsigned long long sizeminl,sizemaxl;  // for mfu_abtoul
     uint64_t sizemin=0,sizemax=0;
     double ratio=0.;
