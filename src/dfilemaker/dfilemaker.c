@@ -745,6 +745,9 @@ int main(int narg, char** arg)
               if (rank == 0) {
                   print_usage();
               }
+              mfu_finalize();
+              MPI_Finalize();
+	      exit(0);
               break;
             default:
               break;
