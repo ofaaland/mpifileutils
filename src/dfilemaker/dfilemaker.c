@@ -12,6 +12,10 @@
 #define FILE_PERMS (S_IRUSR | S_IWUSR)
 #define DIR_PERMS  (S_IRWXU)
 
+/* filltype describes what data to put in generated files */
+typedef enum {ft_random, ft_true, ft_false, ft_alternate, ft_last} filltype_t ;
+static char *filltype_name[]={"random","true","false","alternate"};
+
 /* keep stats during walk */
 uint64_t total_dirs    = 0;
 uint64_t total_files   = 0;
@@ -249,30 +253,33 @@ int getnum(const char* fname)
 //-----------------------------------
 // put nwds ints into buffer
 //------------------------------------
-void fillbuff(int* ibuff, size_t nwds, int kft)
+void fillbuff(int* ibuff, size_t nwds, filltype_t ft)
 {
     int i;
-    switch (kft)
+    switch (ft)
     {
-        case 0:
+        case ft_random:
           for (i = 0; i < nwds; i++) {
             ibuff[i] = rand();
           }
           break;
-        case 1:
+        case ft_true:
           for (i = 0; i < nwds; i++) {
             ibuff[i] = 0xFFFFFFFF;
           }
           break;
-        case 2:
+        case ft_false:
           for (i = 0; i < nwds; i++) {
             ibuff[i] = 0x00000000;
           }
           break;
-        case 3:
+        case ft_alternate:
           for (i = 0; i < nwds; i++) {
             ibuff[i] = 0xAAAAAAAA;
           }
+          break;
+        default:
+          MFU_LOG(MFU_LOG_ERR,"Invalid filltype=%d", ft);
           break;
     }
 }
@@ -285,7 +292,7 @@ int nnum;
 /*----------------------------------------------*/
 /* add content to a node created by create_file */
 /*----------------------------------------------*/
-static int write_file(mfu_flist list, uint64_t idx, int kft)
+static int write_file(mfu_flist list, uint64_t idx, filltype_t ft)
 {
     int rc = 0;
 
@@ -298,7 +305,7 @@ static int write_file(mfu_flist list, uint64_t idx, int kft)
     nnum = getnum(dest_path);
     srand(nnum);
     isize = bufsize/4;
-    fillbuff((int*)buf, isize, kft);
+    fillbuff((int*)buf, isize, ft);
 
     /* open file */
     int fd = mfu_open(dest_path, O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);
@@ -343,7 +350,7 @@ static int write_file(mfu_flist list, uint64_t idx, int kft)
 /*----------------------------------------------*/
 /* add content to nodes created by create_files */
 /*----------------------------------------------*/
-static int write_files(mfu_flist list, int kft)
+static int write_files(mfu_flist list, filltype_t ft)
 {
     int rc = 0;
 
@@ -366,7 +373,7 @@ static int write_files(mfu_flist list, int kft)
         /* process files and links */
         if (type == MFU_TYPE_FILE) {
             /* TODO: skip file if it's not readable */
-            write_file(list, idx, kft);
+            write_file(list, idx, ft);
         }
     }
 
@@ -617,8 +624,7 @@ int main(int narg, char** arg)
     char* tnamelist; // list of path names of items associated with targIDs
     int* lind; // list of ints in order to resort things
     int initsum, noff;
-
-    int kft=0; // kft is index of filltype
+    static filltype_t filltype = ft_random; // what data to put into files
     unsigned long long sizeminl,sizemaxl;  // for mfu_abtoul
     uint64_t sizemin=0,sizemax=0;
     double ratio=0.;
@@ -627,7 +633,6 @@ int main(int narg, char** arg)
     int depmin=0,depmax=0;
     int nmin=0,nmax=0;
     int widmin=0,widmax=0;
-    static char *filltype[]={"random","true","false","alternate"};
     static struct option long_options[] = {
        {"seed",     1, 0, 'i'},
        {"fill",     1, 0, 'f'},
@@ -672,14 +677,17 @@ int main(int narg, char** arg)
              if (jseed) iseed=jseed;
              break;
            case 'f':
-             for (kft=0;kft<4;kft++) {
-                 if (strcmp(optarg,filltype[kft])==0) {
+             for (filltype=0;filltype<ft_last;filltype++) {
+                 if (strcmp(optarg,filltype_name[filltype])==0) {
                      break;
                  }
              }
-             if (kft==4 && rank==0) {
-                 MFU_LOG(MFU_LOG_ERR,"%s not a fill option",optarg);
+             if (filltype==ft_last) {
+                 if (rank==0) {
+                     MFU_LOG(MFU_LOG_ERR,"%s not a fill option",optarg);
+                 }
                  MPI_Finalize();
+                 exit(1);
              }
              break;
            case 'd':
@@ -1049,7 +1057,7 @@ int main(int narg, char** arg)
     mfu_create_opts_t* create_opts = mfu_create_opts_new();
     mfu_flist_mkdir(mybflist, create_opts);
     mfu_flist_mknod(mybflist, create_opts);
-    write_files(mybflist, kft);
+    write_files(mybflist, filltype);
     mfu_create_opts_delete(&create_opts);
 
     //------------------------------------
