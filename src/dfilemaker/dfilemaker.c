@@ -146,7 +146,6 @@ static void print_summary(mfu_flist flist)
     /* convert total size to units */
     if (mfu_debug_level >= MFU_LOG_VERBOSE && rank == 0) {
         MFU_LOG(MFU_LOG_VERBOSE, "");
-        MFU_LOG(MFU_LOG_VERBOSE, "Directory Tree Level %d", level);
         MFU_LOG(MFU_LOG_VERBOSE, "  Items: %llu", (unsigned long long) all_count);
         MFU_LOG(MFU_LOG_VERBOSE, "    Directories: %llu", (unsigned long long) all_dirs);
         MFU_LOG(MFU_LOG_VERBOSE, "    Files: %llu", (unsigned long long) all_files);
