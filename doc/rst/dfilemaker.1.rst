@@ -9,7 +9,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-dfilemaker creates a number of random directory tree with subdirectories and
+dfilemaker creates a number of random directory trees with subdirectories and
 files of various sizes, that is useful for testing.
 
 Directory trees are created under destination_path, which must be a directory,
