@@ -37,12 +37,6 @@ OPTIONS
    ``alternate`` will fill the file with a 0xAA pattern. The default
    fill is ``random``.
 
-.. option:: -r, --ratio=*min*-*max*  (not yet implemented)
-
-   Specify the ratio of files to directories as a percentage. The ratio
-   will be chosen at random within the bounds of min and max. The
-   default ratio is 5% min to 20% max.
-
 .. option:: -i, --seed=*integer*
 
    Specify the seed to use for random number generation. This can be
@@ -54,13 +48,6 @@ OPTIONS
    Specify the file sizes to generate. The file size will be chosen at
    random random within the bounds of min and max. The default file
    size is set from 1MB to 5MB.
-
-.. option:: -w, --width=*min*-*max*  (not yet implemented)
-
-   Specify the width of the file system tree to generate. The width
-   will be selected at random within the bounds of min and max. The
-   width of the tree is determined by counting directories. The default
-   width is set to 10 min, 20 max.
 
 .. option:: -h, --help
 
