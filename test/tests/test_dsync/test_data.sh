@@ -17,14 +17,25 @@
 #set -x
 
 MFU_TEST_BIN=${MFU_TEST_BIN:-${1}}
-DSYNC_SRC_DIR=${DSYNC_SRC_DIR:-${2}}
-DSYNC_DEST_DIR=${DSYNC_DEST_DIR:-${3}}
-DSYNC_TMP_FILE=${DSYNC_TMP_FILE:-${4}}
+DSYNC_SRC_BASE=${DSYNC_SRC_BASE:-${2}}
+DSYNC_DEST_BASE=${DSYNC_DEST_BASE:-${3}}
+DSYNC_TREE_NAME=${DSYNC_TREE_NAME:-${4}}
+
+mpirun=$(which mpirun 2>/dev/null)
+mpirun_opts=""
+if [[ -n $mpirun ]]; then
+	procs=$(( $(nproc ) / 8 ))
+	if [[ $procs -gt 16 ]]; then
+		procs=16
+	fi
+	mpirun_opts="-c $procs"
+
+	echo "Using mpirun: $mpirun $mpirun_opts"
+fi
 
 echo "Using MFU binaries at: $MFU_TEST_BIN"
-echo "Using src directory at: $DSYNC_SRC_DIR"
-echo "Using dest directory at: $DSYNC_DEST_DIR"
-echo "Using directory tree: $DSYNC_TMP_FILE"
+echo "Using src parent directory at: $DSYNC_SRC_BASE"
+echo "Using dest parent directory at: $DSYNC_DEST_BASE"
 
 DSYNC_SRC_DIR=$(mktemp --directory ${DSYNC_SRC_BASE}/${DSYNC_TREE_NAME}.XXXXX)
 DSYNC_DEST_DIR=$(mktemp --directory ${DSYNC_DEST_BASE}/${DSYNC_TREE_NAME}.XXXXX)
@@ -51,11 +62,6 @@ function sync_and_verify()
 
 	local result=0
 	local dest_type=""
-
-	if [[ ! -d $destdir ]]; then
-		echo "sync_and_verify: test assumes src $srcdir and dest $destdir both exist"
-		exit 1
-	fi
 
 	src_sum=$(mktemp /tmp/sync_and_verify.src.XXXXX)
 	sum_all_files $srcdir > $src_sum
