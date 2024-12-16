@@ -46,6 +46,9 @@ function fs_type()
 	df -T ${fname} | awk '$1 != "Filesystem" {print $2}'
 }
 
+#
+# In resulting file, field 1 is sum, field 2 is filename
+#
 function sum_all_files()
 {
 	pushd $1 >/dev/null
@@ -75,9 +78,9 @@ function sync_and_verify()
 	delete_opt=""
 
 	if [[ -n $mpirun ]]; then
-		$mpirun $mpirun_opts $DSYNC_TEST_BIN $quiet_opt $delete_opt $srcdir $destdir
+		$mpirun $mpirun_opts ${MFU_TEST_BIN}/dsync $quiet_opt $delete_opt $srcdir $destdir
 	else
-		$DSYNC_TEST_BIN $quiet_opt $delete_opt $srcdir $destdir
+		${MFU_TEST_BIN}/dsync $quiet_opt $delete_opt $srcdir $destdir
 	fi
 	rc=$?
 
@@ -94,7 +97,13 @@ function sync_and_verify()
 
 		case $expectation in
 		  "union")
-			cat $src_sum $dest_sum | sort -k2 | uniq > $expected_sum
+		        # need to keep the md5sum from dest for files that existed there but not src, before sync
+			cat $src_sum > $expected_sum
+			cat $dest_sum | while read csum fname; do
+				if ! grep -w "$fname" $expected_sum >/dev/null 2>&1; then
+					echo "$csum  $fname" >> $expected_sum
+				fi
+			done
 			;;
 		  "src_exactly")
 			cat $src_sum > $expected_sum
@@ -135,11 +144,8 @@ rm -fr $DSYNC_DEST_DIR/stuff
 mkdir $DSYNC_SRC_DIR/stuff
 mkdir $DSYNC_DEST_DIR/stuff
 
-pushd $DSYNC_SRC_DIR/stuff
-
 # args expected by dfilemaker (creates trees, files all different data)
-$MFU_TEST_BIN/dfilemaker --items 5000-6000 --depth 5-6 --size 1MB-25MB
-popd
+$MFU_TEST_BIN/dfilemaker --items 5000-6000 --depth 5-6 --size 1MB-25MB $DSYNC_SRC_DIR/stuff
 sync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff new_files_checksum union
 
 # file with differing data is copied if --contents arg is used
