@@ -138,21 +138,31 @@ function sync_and_verify()
 	return $result
 }
 
-# file data is identical after a copy
+# verify file data is identical after a copy
+rm -fr $DSYNC_SRC_DIR/stuff
+rm -fr $DSYNC_DEST_DIR/stuff
+mkdir $DSYNC_SRC_DIR/stuff
+mkdir $DSYNC_DEST_DIR/stuff
+$MFU_TEST_BIN/dfilemaker --nitems 1000-2000 --depth 5-6 --size 1MB-25MB $DSYNC_SRC_DIR/stuff
+
+sync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff new_files_checksum union
+
+# verify file with same type, size, owner, mtime, but differing data is NOT copied by default
 rm -fr $DSYNC_SRC_DIR/stuff
 rm -fr $DSYNC_DEST_DIR/stuff
 mkdir $DSYNC_SRC_DIR/stuff
 mkdir $DSYNC_DEST_DIR/stuff
 
-# args expected by dfilemaker (creates trees, files all different data)
-$MFU_TEST_BIN/dfilemaker --nitems 1000-2000 --depth 5-6 --size 1MB-25MB $DSYNC_SRC_DIR/stuff
-sync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff new_files_checksum union
+dd if=/dev/urandom bs=1M count=10 of=$DSYNC_SRC_DIR/stuff/file1
+dd if=/dev/urandom bs=1M count=10 of=$DSYNC_DEST_DIR/stuff/file1
+touch --date="2004-02-29 16:21:42" $DSYNC_SRC_DIR/stuff/file1 $DSYNC_DEST_DIR/stuff/file1
 
-# file with differing data is copied if --contents arg is used
-# not implemented
+echo without --contents should copy nothing
+${MFU_TEST_BIN}/dsync $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff
 
-# file with differing data is not copied if --contents arg is not used and metadata match
-# not implemented
+# verify file with same type, size, owner, mtime, but differing data IS copied if --contents arg is used
+echo with --contents should copy the file
+${MFU_TEST_BIN}/dsync --verbose --contents  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff
 
 # clean up
 rm -fr $DSYNC_SRC_DIR/stuff
