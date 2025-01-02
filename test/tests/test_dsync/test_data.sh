@@ -160,11 +160,11 @@ rm -fr $DSYNC_DEST_DIR/stuff
 mkdir $DSYNC_SRC_DIR/stuff
 mkdir $DSYNC_DEST_DIR/stuff
 
-dd if=/dev/urandom bs=1M count=10 of=$DSYNC_SRC_DIR/stuff/file1
-dd if=/dev/urandom bs=1M count=10 of=$DSYNC_DEST_DIR/stuff/file1
-touch --date="2004-02-29 16:21:42" $DSYNC_SRC_DIR/stuff/file1 $DSYNC_DEST_DIR/stuff/file1
+$MFU_TEST_BIN/dfilemaker --nitems 50-100 --depth 2-3 --size 1MB-25MB $DSYNC_SRC_DIR/stuff
+cp -a $DSYNC_SRC_DIR/stuff/* $DSYNC_DEST_DIR/stuff
+find $DSYNC_SRC_DIR/stuff -print0 | xargs -0 touch --date="2004-02-29 16:21:42"
 
-sync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff no_contents dest_exactly
+sync_and_verify $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff no_contents dest_exactly
 
 # verify file with same type, size, owner, mtime, but differing data IS copied if --contents arg is used
 sync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff with_contents src_exactly
