@@ -161,8 +161,12 @@ mkdir $DSYNC_SRC_DIR/stuff
 mkdir $DSYNC_DEST_DIR/stuff
 
 $MFU_TEST_BIN/dfilemaker --nitems 50-100 --depth 2-3 --size 1MB-25MB $DSYNC_SRC_DIR/stuff
-cp -a $DSYNC_SRC_DIR/stuff/* $DSYNC_DEST_DIR/stuff
-find $DSYNC_SRC_DIR/stuff -print0 | xargs -0 touch --date="2004-02-29 16:21:42"
+cp -a $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff
+find $DSYNC_DEST_DIR/stuff -type f -print | while read fname; do
+	dd if=/dev/urandom of=$fname bs=1K count=1 seek=$((RANDOM % 512))
+done
+find $DSYNC_SRC_DIR/stuff -type f -print0 | xargs -0 touch --date="2004-02-29 16:21:42"
+find $DSYNC_DEST_DIR/stuff -type f -print0 | xargs -0 touch --date="2004-02-29 16:21:42"
 
 sync_and_verify $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff no_contents dest_exactly
 
