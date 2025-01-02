@@ -75,12 +75,16 @@ function sync_and_verify()
 	dest_type=$(fs_type $destdir)
 
 	quiet_opt="--quiet"
-	delete_opt=""
+	contents_opt=""
+
+	if [[ $name = "with_contents" ]]; then
+		contents_opt="--contents"
+	fi
 
 	if [[ -n $mpirun ]]; then
-		$mpirun $mpirun_opts ${MFU_TEST_BIN}/dsync $quiet_opt $delete_opt $srcdir $destdir
+		$mpirun $mpirun_opts ${MFU_TEST_BIN}/dsync $quiet_opt $contents_opt $srcdir $destdir
 	else
-		${MFU_TEST_BIN}/dsync $quiet_opt $delete_opt $srcdir $destdir
+		${MFU_TEST_BIN}/dsync $quiet_opt $contents_opt $srcdir $destdir
 	fi
 	rc=$?
 
@@ -107,6 +111,9 @@ function sync_and_verify()
 			;;
 		  "src_exactly")
 			cat $src_sum > $expected_sum
+			;;
+		  "dest_exactly")
+			cat $dest_sum > $expected_sum
 			;;
 		esac
 
@@ -145,7 +152,7 @@ mkdir $DSYNC_SRC_DIR/stuff
 mkdir $DSYNC_DEST_DIR/stuff
 $MFU_TEST_BIN/dfilemaker --nitems 1000-2000 --depth 5-6 --size 1MB-25MB $DSYNC_SRC_DIR/stuff
 
-sync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff new_files_checksum union
+sync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff checksums_verified union
 
 # verify file with same type, size, owner, mtime, but differing data is NOT copied by default
 rm -fr $DSYNC_SRC_DIR/stuff
@@ -157,12 +164,10 @@ dd if=/dev/urandom bs=1M count=10 of=$DSYNC_SRC_DIR/stuff/file1
 dd if=/dev/urandom bs=1M count=10 of=$DSYNC_DEST_DIR/stuff/file1
 touch --date="2004-02-29 16:21:42" $DSYNC_SRC_DIR/stuff/file1 $DSYNC_DEST_DIR/stuff/file1
 
-echo without --contents should copy nothing
-${MFU_TEST_BIN}/dsync $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff
+sync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff no_contents dest_exactly
 
 # verify file with same type, size, owner, mtime, but differing data IS copied if --contents arg is used
-echo with --contents should copy the file
-${MFU_TEST_BIN}/dsync --verbose --contents  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff
+sync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff with_contents src_exactly
 
 # clean up
 rm -fr $DSYNC_SRC_DIR/stuff
