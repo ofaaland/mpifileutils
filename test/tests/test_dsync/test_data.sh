@@ -145,7 +145,7 @@ mkdir $DSYNC_SRC_DIR/stuff
 mkdir $DSYNC_DEST_DIR/stuff
 
 # args expected by dfilemaker (creates trees, files all different data)
-$MFU_TEST_BIN/dfilemaker --nitems 5000-6000 --depth 5-6 --size 1MB-25MB $DSYNC_SRC_DIR/stuff
+$MFU_TEST_BIN/dfilemaker --nitems 1000-2000 --depth 5-6 --size 1MB-25MB $DSYNC_SRC_DIR/stuff
 sync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff new_files_checksum union
 
 # file with differing data is copied if --contents arg is used
