@@ -5,9 +5,10 @@
 ##############################################################################
 # Description:
 #
-#   Compare dsync and rsync behavior for unexpected differences
-#     - after dsync between src and dest, rsync between src and dest copies nothing
-#     - after rsync between src and dest, dsync between src and dest copies nothing
+#   Check sequential syncs for unexpected changes
+#     - after dsync between src and dest, a second dsync copies nothing
+#     - after rsync between src and dest, a dsync copies nothing
+#     - after dsync between src and dest, a rsync copies nothing
 #
 # Notes:
 #
@@ -146,7 +147,7 @@ function rsync_and_verify()
 	return $result
 }
 
-# second sync there should be no change
+# after dsync between src and dest, a second dsync copies nothing
 rm -fr $DSYNC_SRC_DIR/stuff
 rm -fr $DSYNC_DEST_DIR/stuff
 mkdir $DSYNC_SRC_DIR/stuff
@@ -154,7 +155,7 @@ ${MFU_TEST_BIN}/dfilemaker --depth 5-10 --nitems 100-300 --size 1MB-10MB $DSYNC_
 dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff initial_sync
 dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff no_change
 
-# second sync there should be no change
+# after rsync between src and dest, a dsync copies nothing
 rm -fr $DSYNC_SRC_DIR/stuff
 rm -fr $DSYNC_DEST_DIR/stuff
 mkdir $DSYNC_SRC_DIR/stuff
@@ -162,7 +163,7 @@ ${MFU_TEST_BIN}/dfilemaker --depth 5-10 --nitems 100-300 --size 1MB-10MB $DSYNC_
 rsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff initial_sync
 dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff no_change
 
-# second sync there should be no change
+# after dsync between src and dest, a rsync copies nothing
 rm -fr $DSYNC_SRC_DIR/stuff
 rm -fr $DSYNC_DEST_DIR/stuff
 mkdir $DSYNC_SRC_DIR/stuff
