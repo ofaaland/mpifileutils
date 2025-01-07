@@ -172,7 +172,7 @@ rm -fr $DSYNC_SRC_DIR/stuff
 rm -fr $DSYNC_DEST_DIR/stuff
 mkdir $DSYNC_SRC_DIR/stuff
 ${MFU_TEST_BIN}/dfilemaker --depth 5-10 --nitems 100-300 --size 1MB-10MB $DSYNC_SRC_DIR/stuff
-rsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff rsync_then_dsync initial_sync
+rsync_and_verify  $DSYNC_SRC_DIR/stuff/ $DSYNC_DEST_DIR/stuff rsync_then_dsync initial_sync
 dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff rsync_then_dsync no_change
 
 # after dsync between src and dest, a rsync copies nothing
@@ -181,7 +181,7 @@ rm -fr $DSYNC_DEST_DIR/stuff
 mkdir $DSYNC_SRC_DIR/stuff
 ${MFU_TEST_BIN}/dfilemaker --depth 5-10 --nitems 100-300 --size 1MB-10MB $DSYNC_SRC_DIR/stuff
 dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff dsync_then_rsync initial_sync
-rsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff dsync_then_rsync no_change
+rsync_and_verify  $DSYNC_SRC_DIR/stuff/ $DSYNC_DEST_DIR/stuff dsync_then_rsync no_change
 
 # clean up
 rm -fr $DSYNC_SRC_DIR/stuff
