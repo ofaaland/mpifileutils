@@ -70,7 +70,7 @@ function dsync_and_verify()
 	local result=0
 	local dest_type=""
 
-	dsync_output=$(mktemp /tmp/rsync_compare.dsync_output.XXXXX)
+	dsync_output=$(mktemp /tmp/test_multiple_syncs.dsync_output.XXXXX)
 	if [[ -n $mpirun ]]; then
 		$mpirun $mpirun_opts ${MFU_TEST_BIN}/dsync --delete $srcdir $destdir > $dsync_output 2>&1
 	else
@@ -88,7 +88,7 @@ function dsync_and_verify()
 		return $result
 	fi
 
-	unexpected_changes=$(mktemp /tmp/rsync_compare.unexpected.XXXXX)
+	unexpected_changes=$(mktemp /tmp/test_multiple_syncs.unexpected.XXXXX)
 	if [[ $rc -eq 0 ]]; then
 		grep -E -e "Creating [0-9][0-9]* (files|directories)" -e "Copy data:" -e "Updated [0-9][0-9]* items" $dsync_output > $unexpected_changes
 		if [[ $? -eq 0 ]]; then
@@ -122,7 +122,7 @@ function rsync_and_verify()
 	local result=0
 	local dest_type=""
 
-	rsync_output=$(mktemp /tmp/dsync_compare.rsync_output.XXXXX)
+	rsync_output=$(mktemp /tmp/test_multiple_syncs.rsync_output.XXXXX)
 	$rsync -av -HAX $srcdir $destdir > $rsync_output 2>&1
 	rc=$?
 
@@ -136,7 +136,7 @@ function rsync_and_verify()
 		return $result
 	fi
 
-	unexpected_changes=$(mktemp /tmp/dsync_compare.unexpected.XXXXX)
+	unexpected_changes=$(mktemp /tmp/test_multiple_syncs.unexpected.XXXXX)
 	if [[ $rc -eq 0 ]]; then
 		grep -v -e "^sending incremental" -e "^sent [1-9][0-9,]* bytes" -e "^total size is" -e "^[^0-9a-z]*" $rsync_output > $unexpected_changes
 		if [[ $? -eq 0 ]]; then
