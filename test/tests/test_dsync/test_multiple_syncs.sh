@@ -63,7 +63,8 @@ function dsync_and_verify()
 {
 	local srcdir=$1
 	local destdir=$2
-	local expectation=$3
+	local name=$3
+	local expectation=$4
 
 	local rc=0
 	local result=0
@@ -109,7 +110,8 @@ function rsync_and_verify()
 {
 	local srcdir=$1
 	local destdir=$2
-	local expectation=$3
+	local name=$3
+	local expectation=$4
 
 	local rc=0
 	local result=0
@@ -152,24 +154,24 @@ rm -fr $DSYNC_SRC_DIR/stuff
 rm -fr $DSYNC_DEST_DIR/stuff
 mkdir $DSYNC_SRC_DIR/stuff
 ${MFU_TEST_BIN}/dfilemaker --depth 5-10 --nitems 100-300 --size 1MB-10MB $DSYNC_SRC_DIR/stuff
-dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff initial_sync
-dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff no_change
+dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff multi-dsync initial_sync
+dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff multi-dsync no_change
 
 # after rsync between src and dest, a dsync copies nothing
 rm -fr $DSYNC_SRC_DIR/stuff
 rm -fr $DSYNC_DEST_DIR/stuff
 mkdir $DSYNC_SRC_DIR/stuff
 ${MFU_TEST_BIN}/dfilemaker --depth 5-10 --nitems 100-300 --size 1MB-10MB $DSYNC_SRC_DIR/stuff
-rsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff initial_sync
-dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff no_change
+rsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff rsync_then_dsync initial_sync
+dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff rsync_then_dsync no_change
 
 # after dsync between src and dest, a rsync copies nothing
 rm -fr $DSYNC_SRC_DIR/stuff
 rm -fr $DSYNC_DEST_DIR/stuff
 mkdir $DSYNC_SRC_DIR/stuff
 ${MFU_TEST_BIN}/dfilemaker --depth 5-10 --nitems 100-300 --size 1MB-10MB $DSYNC_SRC_DIR/stuff
-dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff initial_sync
-rsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff no_change
+dsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff dsync_then_rsync initial_sync
+rsync_and_verify  $DSYNC_SRC_DIR/stuff $DSYNC_DEST_DIR/stuff dsync_then_rsync no_change
 
 # clean up
 rm -fr $DSYNC_SRC_DIR/stuff
