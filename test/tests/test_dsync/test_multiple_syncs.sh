@@ -83,8 +83,13 @@ function dsync_and_verify()
 		result=1
 	fi
 
+	if [[ $expectation = "initial_sync" ]]; then
+		rm $dsync_output
+		return $result
+	fi
+
 	unexpected_changes=$(mktemp /tmp/rsync_compare.unexpected.XXXXX)
-	if [[ $rc -eq 0 && $expectation = "no_change" ]]; then
+	if [[ $rc -eq 0 ]]; then
 		grep -E -e "Creating [0-9][0-9]* (files|directories)" -e "Copy data:" -e "Updated [0-9][0-9]* items" $dsync_output > $unexpected_changes
 		if [[ $? -eq 0 ]]; then
 			result=1
@@ -126,8 +131,13 @@ function rsync_and_verify()
 		result=1
 	fi
 
+	if [[ $expectation = "initial_sync" ]]; then
+		rm $rsync_output
+		return $result
+	fi
+
 	unexpected_changes=$(mktemp /tmp/dsync_compare.unexpected.XXXXX)
-	if [[ $rc -eq 0 && $expectation = "no_change" ]]; then
+	if [[ $rc -eq 0 ]]; then
 		grep -v -e "^sending incremental" -e "^sent [1-9][0-9,]* bytes" -e "^total size is" -e "^[^0-9a-z]*" $rsync_output > $unexpected_changes
 		if [[ $? -eq 0 ]]; then
 			result=1
